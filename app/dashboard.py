@@ -204,9 +204,8 @@ with col_logo:
         st.write("🌿")
 with col_title:
     subtitle = "Flowering Management System" if lang_key=="en" else "מערכת ניהול וחיזוי הפרחה"
-    align = "left" if lang_key=="en" else "right"
     st.markdown(f"""
-    <div style="padding-top:15px;text-align:{align}">
+    <div style="padding-top:15px;text-align:center">
         <h2 style="color:#c8a951;margin:0;font-family:serif;">My Green Fields</h2>
         <p style="color:#a8d5a2;margin:0;font-size:14px;">{subtitle}</p>
     </div>
