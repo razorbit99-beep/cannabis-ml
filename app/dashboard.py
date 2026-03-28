@@ -568,7 +568,7 @@ if page == "🏠 דשבורד":
         st.plotly_chart(fig3, use_container_width=True)
 
 elif page == "🔮 חיזוי אצווה":
-    st.header("Batch Duration Prediction" if lang_key=="en" else "חיזוי משך הפרחה")
+    st.markdown('<h2 style="text-align:left">Batch Duration Prediction</h2>', unsafe_allow_html=True) if lang_key=="en" else st.header("חיזוי משך הפרחה")
     st.markdown("---")
 
     col1, col2 = st.columns(2)
