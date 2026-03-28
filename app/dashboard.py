@@ -163,7 +163,7 @@ else:
 page = st.sidebar.radio("ניווט", ["🏠 דשבורד", "🔮 חיזוי אצווה", "📋 שיבוץ אצוות", "📊 ניתוח נתונים", "📅 גאנט"])
 
 if page == "📋 שיבוץ אצוות":
-    st.header("שיבוץ אצוות")
+    st.subheader("שיבוץ אצוות")
     st.markdown("---")
     
     supabase = get_supabase()
