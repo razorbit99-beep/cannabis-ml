@@ -584,7 +584,13 @@ elif page == "📅 גאנט":
     filtered_gantt = df_valid[df_valid['חממה'].isin(selected_gh_gantt)]
     if selected_strain:
         filtered_gantt = filtered_gantt[filtered_gantt['זן'].isin(selected_strain)]
-    filtered_gantt = filtered_gantt.tail(n_batches)
+    # אצוות מתוכננות תמיד מוצגות
+    if 'is_planned' in filtered_gantt.columns:
+        planned = filtered_gantt[filtered_gantt['is_planned']==True]
+        historical = filtered_gantt[filtered_gantt['is_planned']!=True].tail(n_batches)
+        filtered_gantt = pd.concat([historical, planned]).drop_duplicates()
+    else:
+        filtered_gantt = filtered_gantt.tail(n_batches)
 
     st.markdown(f"**מציג {len(filtered_gantt)} אצוות**")
 
