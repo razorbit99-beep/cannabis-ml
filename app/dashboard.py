@@ -182,8 +182,9 @@ if page == "📋 שיבוץ אצוות":
             hist_opt = df[(df["חממה"]==gh_opt)&(df["זן"]==new_strain)]
             all_gh_opt = df[df["חממה"]==gh_opt]
             n = len(hist_opt)
-            avg = hist_opt["סה\"כ ימים בהפרחה"].mean() if n>0 else all_gh_opt["סה\"כ ימים בהפרחה"].mean()
-            std = hist_opt["סה\"כ ימים בהפרחה"].std() if n>0 else all_gh_opt["סה\"כ ימים בהפרחה"].std()
+            target_col = [c for c in df.columns if "ימים" in c][0]
+            avg = hist_opt[target_col].mean() if n>0 else all_gh_opt[target_col].mean()
+            std = hist_opt[target_col].std() if n>0 else all_gh_opt[target_col].std()
             if pd.isna(avg): avg=46
             if pd.isna(std): std=5
             exp_score = min(n*15, 40)
