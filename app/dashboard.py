@@ -185,18 +185,19 @@ TRANSLATIONS = {
     }
 }
 
-col_he, col_en = st.sidebar.columns(2)
-with col_he:
-    he_btn = st.button("🇮🇱 עברית", use_container_width=True)
-with col_en:
-    en_btn = st.button("🇺🇸 English", use_container_width=True)
-
 if "lang" not in st.session_state:
     st.session_state.lang = "he"
-if he_btn:
-    st.session_state.lang = "he"
-if en_btn:
-    st.session_state.lang = "en"
+
+col_he, col_en = st.sidebar.columns(2)
+with col_he:
+    if st.button("🇮🇱 עברית", use_container_width=True):
+        st.session_state.lang = "he"
+        st.rerun()
+with col_en:
+    if st.button("🇺🇸 English", use_container_width=True):
+        st.session_state.lang = "en"
+        st.rerun()
+
 lang = "עברית" if st.session_state.lang == "he" else "English"
 lang_key = "he" if lang == "עברית" else "en"
 T = TRANSLATIONS[lang_key]
