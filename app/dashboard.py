@@ -186,25 +186,55 @@ elif page == "📊 ניתוח נתונים":
                                   default=sorted(df['חממה'].unique())[:3])
     filtered = df[df['חממה'].isin(selected_gh)] if selected_gh else df
 
-    col1, col2 = st.columns(2)
-    with col1:
-        fig = px.scatter(filtered, x='חודש_התחלה', y='סה״כ ימים בהפרחה',
-                        color='חממה', title="ימי הפרחה לפי חודש התחלה")
-        st.plotly_chart(fig, use_container_width=True)
+    # גרף 1 - ממוצע לפי חודש
+    month_names = {1:'ינואר',2:'פברואר',3:'מרץ',4:'אפריל',5:'מאי',6:'יוני',
+                   7:'יולי',8:'אוגוסט',9:'ספטמבר',10:'אוקטובר',11:'נובמבר',12:'דצמבר'}
+    monthly = filtered.groupby('חודש_התחלה')['סה״כ ימים בהפרחה'].mean().reset_index()
+    monthly['חודש'] = monthly['חודש_התחלה'].map(month_names)
+    fig1 = px.bar(monthly, x='חודש', y='סה״כ ימים בהפרחה',
+                  title="ממוצע ימי הפרחה לפי חודש כניסה",
+                  color='סה״כ ימים בהפרחה', color_continuous_scale='RdYlGn_r',
+                  labels={'סה״כ ימים בהפרחה': 'ממוצע ימי הפרחה', 'חודש': 'חודש כניסה להפרחה'})
+    fig1.update_layout(coloraxis_showscale=False)
+    st.plotly_chart(fig1, use_container_width=True)
 
-    with col2:
-        strain_perf = filtered.groupby('זן')['סה״כ ימים בהפרחה'].agg(['mean','std','count']).reset_index()
-        strain_perf = strain_perf[strain_perf['count'] >= 3].sort_values('mean')
-        fig2 = px.bar(strain_perf, x='זן', y='mean', error_y='std',
-                      title="ממוצע ימי הפרחה לפי זן (מינימום 3 אצוות)",
-                      color='mean', color_continuous_scale='RdYlGn_r')
+    col1, col2 = st.columns(2)
+
+    # גרף 2 - ממוצע לפי חממה
+    with col1:
+        gh_perf = filtered.groupby('חממה')['סה״כ ימים בהפרחה'].agg(['mean','count']).reset_index()
+        gh_perf.columns = ['חממה', 'ממוצע ימים', 'מספר אצוות']
+        gh_perf = gh_perf.sort_values('ממוצע ימים')
+        fig2 = px.bar(gh_perf, x='חממה', y='ממוצע ימים',
+                      title="ממוצע ימי הפרחה לפי חממה",
+                      color='ממוצע ימים', color_continuous_scale='RdYlGn_r',
+                      hover_data=['מספר אצוות'],
+                      labels={'ממוצע ימים': 'ממוצע ימי הפרחה', 'חממה': 'חממה'})
+        fig2.update_layout(coloraxis_showscale=False)
         st.plotly_chart(fig2, use_container_width=True)
 
+    # גרף 3 - הזנים עם הכי הרבה אצוות
+    with col2:
+        strain_perf = filtered.groupby('זן')['סה״כ ימים בהפרחה'].agg(['mean','count']).reset_index()
+        strain_perf.columns = ['זן', 'ממוצע ימים', 'מספר אצוות']
+        strain_perf = strain_perf[strain_perf['מספר אצוות'] >= 3].sort_values('ממוצע ימים')
+        fig3 = px.bar(strain_perf, x='זן', y='ממוצע ימים',
+                      title="ממוצע ימי הפרחה לפי זן (מינימום 3 אצוות)",
+                      color='ממוצע ימים', color_continuous_scale='RdYlGn_r',
+                      hover_data=['מספר אצוות'],
+                      labels={'ממוצע ימים': 'ממוצע ימי הפרחה', 'זן': 'זן'})
+        fig3.update_layout(coloraxis_showscale=False)
+        st.plotly_chart(fig3, use_container_width=True)
+
+    # טבלה נקייה
     st.subheader("📋 טבלת נתונים")
-    cols = ['מספר אצווה','זן','חממה','תאריך תחילת הפרחה','סה״כ ימים בהפרחה']
-    if 'עונה' in df.columns:
-        cols.append('עונה')
-    st.dataframe(filtered[cols], use_container_width=True)
+    cols_show = ['מספר אצווה','זן','חממה','תאריך תחילת הפרחה','סה״כ ימים בהפרחה']
+    if 'עונה' in filtered.columns:
+        cols_show.append('עונה')
+    display_df = filtered[cols_show].copy()
+    display_df['סה״כ ימים בהפרחה'] = display_df['סה״כ ימים בהפרחה'].round(1)
+    display_df.columns = ['מספר אצווה','זן','חממה','תאריך התחלה','ימי הפרחה'] + (['עונה'] if 'עונה' in filtered.columns else [])
+    st.dataframe(display_df, use_container_width=True, hide_index=True)
 
 elif page == "📅 גאנט":
     st.title("📅 גאנט הפרחה")
