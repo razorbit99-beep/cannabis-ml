@@ -598,9 +598,7 @@ elif page == "📅 גאנט":
             y='חממה',
             color='זן',
             title="גאנט אצוות הפרחה",
-            hover_data=['מספר אצווה','סה״כ ימים','סוג'],
-            pattern_shape='סוג',
-            pattern_shape_map={'📋 מתוכנן': '/', '✅ היסטורי': ''}
+            hover_data=['מספר אצווה','סה\'כ ימים','סוג']
         )
         today_str = datetime.today().strftime('%Y-%m-%d')
         fig.add_vline(x=today_str, line_dash="dash", line_color="red")
