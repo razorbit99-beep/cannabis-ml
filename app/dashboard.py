@@ -477,7 +477,8 @@ if page == "🏠 דשבורד":
         top_strains = df['זן'].value_counts().head(10)
         fig2 = px.bar(x=top_strains.values, y=top_strains.index, orientation='h',
                       title="10 זנים נפוצים", color=top_strains.values,
-                      color_continuous_scale='Greens')
+                      color_continuous_scale='Greens',
+                      labels={'x': 'מספר אצוות', 'y': 'זן'})
         fig2.update_layout(
             height=350, coloraxis_showscale=False, showlegend=False,
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)',
