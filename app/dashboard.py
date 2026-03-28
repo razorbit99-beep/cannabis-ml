@@ -174,6 +174,44 @@ if page == "📋 שיבוץ אצוות":
         
         st.info(f"⏱️ חיזוי: {predicted_days} ימי הפרחה | תאריך קציר משוער: {end_date_pred.strftime('%d/%m/%Y')}")
         
+        # המלצת חממות
+        st.markdown("---")
+        st.subheader("🏆 חממות מומלצות לזן זה")
+        rec_results = []
+        for gh_opt in sorted(df["חממה"].unique()):
+            hist_opt = df[(df["חממה"]==gh_opt)&(df["זן"]==new_strain)]
+            all_gh_opt = df[df["חממה"]==gh_opt]
+            n = len(hist_opt)
+            avg = hist_opt["סה\"כ ימים בהפרחה"].mean() if n>0 else all_gh_opt["סה\"כ ימים בהפרחה"].mean()
+            std = hist_opt["סה\"כ ימים בהפרחה"].std() if n>0 else all_gh_opt["סה\"כ ימים בהפרחה"].std()
+            if pd.isna(avg): avg=46
+            if pd.isna(std): std=5
+            exp_score = min(n*15, 40)
+            stab_score = max(0, 30-std*2)
+            batches_check = load_batches_db()
+            if len(batches_check)>0 and "start_date" in batches_check.columns:
+                batches_check["start_date"] = pd.to_datetime(batches_check["start_date"], errors="coerce")
+                batches_check["end_date"] = pd.to_datetime(batches_check["end_date"], errors="coerce")
+                busy = batches_check[
+                    (batches_check["greenhouse"]==gh_opt) &
+                    (batches_check["start_date"]<=pd.Timestamp(new_date)) &
+                    (batches_check["end_date"]>=pd.Timestamp(new_date))
+                ]
+                avail_score = 30 if len(busy)==0 else 0
+                avail_txt = "✅ פנויה" if len(busy)==0 else "❌ תפוסה"
+            else:
+                avail_score = 30
+                avail_txt = "✅ פנויה"
+            total = round(exp_score + stab_score + avail_score)
+            rec_results.append({"חממה":gh_opt,"ניסיון":n,"ממוצע":round(avg,1),"זמינות":avail_txt,"ציון":total})
+        rec_df = pd.DataFrame(rec_results).sort_values("ציון", ascending=False)
+        for _, row in rec_df.head(5).iterrows():
+            color = "#2d6a4f" if row["ציון"]>=70 else "#e6a817" if row["ציון"]>=40 else "#c0392b"
+            mark = " ← נבחרה" if row["חממה"]==new_gh else ""
+            st.markdown(f'''<div style="background:{color};padding:8px 15px;border-radius:8px;color:white;margin:4px 0;">
+            <b>חממה {row["חממה"]}{mark}</b> | {row["זמינות"]} | ניסיון: {row["ניסיון"]} | ממוצע: {row["ממוצע"]} ימים | ציון: {row["ציון"]}/100
+            </div>''', unsafe_allow_html=True)
+        st.markdown("---")
         new_batch_id = st.text_input("מספר אצווה (אופציונלי)", value=f"NEW-{new_gh}-{new_date.strftime('%y%m%d')}")
         
         if st.button("➕ שבץ אצווה", use_container_width=True):
