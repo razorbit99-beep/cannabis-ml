@@ -569,9 +569,9 @@ if page == "🏠 דשבורד":
 
 elif page == "🔮 חיזוי אצווה":
     if lang_key=="en":
-    st.markdown('<h2 style="text-align:left">Batch Duration Prediction</h2>', unsafe_allow_html=True)
-else:
-    st.header("חיזוי משך הפרחה")
+        st.markdown('<h2 style="text-align:left">Batch Duration Prediction</h2>', unsafe_allow_html=True)
+    else:
+        st.header("חיזוי משך הפרחה")
     st.markdown("---")
 
     col1, col2 = st.columns(2)
