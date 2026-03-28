@@ -259,7 +259,12 @@ elif page == "📅 גאנט":
     filtered_gantt = df_valid[df_valid['חממה'].isin(selected_gh_gantt)]
     if selected_strain:
         filtered_gantt = filtered_gantt[filtered_gantt['זן'].isin(selected_strain)]
-    filtered_gantt = filtered_gantt.tail(n_batches)
+    # סינון תאריכים הגיוניים בלבד
+    filtered_gantt = filtered_gantt[
+        (filtered_gantt['תאריך תחילת הפרחה'] >= '2024-01-01') &
+        (filtered_gantt['סה״כ ימים בהפרחה'] <= 90) &
+        (filtered_gantt['סה״כ ימים בהפרחה'] >= 30)
+    ].tail(n_batches)
 
     st.markdown(f"**מציג {len(filtered_gantt)} אצוות**")
 
