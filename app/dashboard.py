@@ -582,7 +582,7 @@ elif page == "🔮 חיזוי אצווה":
     with col2:
         start_date = st.date_input("Entry Date" if lang_key=="en" else "תאריך כניסה להפרחה", datetime.today())
 
-    if st.button("🔮 חשב חיזוי", use_container_width=True):
+    if st.button("Calculate Prediction" if lang_key=="en" else "חשב חיזוי", use_container_width=True):
         if gb is not None:
             pred, season = predict_ml(gb, feature_cols, mapping, df, greenhouse, strain, start_date)
             method = "🤖 מודל ML (Gradient Boosting - דיוק 93%)"
