@@ -185,7 +185,8 @@ TRANSLATIONS = {
     }
 }
 
-lang = st.sidebar.selectbox("🌐 שפה / Language", ["עברית", "English"], label_visibility="collapsed")
+st.sidebar.markdown("**🌐 שפה / Language**")
+lang = st.sidebar.selectbox("lang", ["עברית", "English"], label_visibility="collapsed")
 lang_key = "he" if lang == "עברית" else "en"
 T = TRANSLATIONS[lang_key]
 
