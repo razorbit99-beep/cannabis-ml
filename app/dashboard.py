@@ -195,6 +195,7 @@ if lang_key == "en":
     [data-testid="stHeadingWithActionElements"] > div { justify-content: flex-start !important; }
     .stMetric { direction: ltr !important; }
     .stMetric label { text-align: left !important; }
+    label[data-testid="stWidgetLabel"] { text-align: left !important; direction: ltr !important; float: left !important; }
     </style>""", unsafe_allow_html=True)
 
 col_logo, col_title = st.columns([1, 4])
@@ -576,7 +577,7 @@ elif page == "🔮 חיזוי אצווה":
 
     col1, col2 = st.columns(2)
     with col1:
-        greenhouse = st.selectbox("Select Greenhouse" if lang_key=="en" else "בחר חממה", sorted(df['חממה'].unique()))
+        greenhouse = st.selectbox("בחר חממה" if lang_key=="he" else "Select Greenhouse", sorted(df['חממה'].unique()))
         strain = st.selectbox("Select Strain" if lang_key=="en" else "בחר זן", sorted(df['זן'].unique()))
     with col2:
         start_date = st.date_input("Entry Date" if lang_key=="en" else "תאריך כניסה להפרחה", datetime.today())
