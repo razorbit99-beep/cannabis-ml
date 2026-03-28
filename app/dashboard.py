@@ -547,7 +547,7 @@ elif page == "📅 גאנט":
     supabase_gantt = get_supabase()
     if supabase_gantt:
         try:
-            res = supabase_gantt.table('batches').select('*').execute()
+            res = supabase_gantt.table('batches').select('*').order('start_date', desc=False).limit(500).execute()
             raw = pd.DataFrame(res.data)
             raw['start'] = pd.to_datetime(raw['start_date'], errors='coerce')
             raw['end'] = pd.to_datetime(raw['end_date'], errors='coerce')
