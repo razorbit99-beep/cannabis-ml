@@ -544,125 +544,76 @@ elif page == "📅 גאנט":
     st.title("📅 גאנט הפרחה")
     st.markdown("---")
 
-    # טעינת נתונים מ-Supabase + היסטוריה
     supabase_gantt = get_supabase()
     if supabase_gantt:
         try:
             res = supabase_gantt.table('batches').select('*').execute()
-            db_df = pd.DataFrame(res.data)
-            db_df = db_df.rename(columns={
-                'batch_id':'מספר אצווה','strain':'זן','greenhouse':'חממה',
-                'start_date':'תאריך תחילת הפרחה','end_date':'תאריך סיום',
-                'total_days':'סה״כ ימים בהפרחה'
-            })
-            db_df['תאריך תחילת הפרחה'] = pd.to_datetime(db_df['תאריך תחילת הפרחה'], errors='coerce')
-            db_df['תאריך סיום'] = pd.to_datetime(db_df['תאריך סיום'], errors='coerce')
-            db_df['סוג'] = db_df.get('is_planned', False).apply(lambda x: '📋 מתוכנן' if x else '✅ היסטורי')
-            df_valid = db_df.dropna(subset=['תאריך תחילת הפרחה','תאריך סיום'])
-            st.success(f"✅ נטענו {len(df_valid)} אצוות מהמסד")
+            raw = pd.DataFrame(res.data)
+            raw['start'] = pd.to_datetime(raw['start_date'], errors='coerce')
+            raw['end'] = pd.to_datetime(raw['end_date'], errors='coerce')
+            raw['זן'] = raw['strain']
+            raw['חממה'] = raw['greenhouse']
+            raw['מספר אצווה'] = raw['batch_id']
+            raw['סה״כ ימים'] = raw['total_days']
+            raw['סוג'] = raw['is_planned'].apply(lambda x: '📋 מתוכנן' if x else '✅ היסטורי')
+            df_valid = raw.dropna(subset=['start','end']).copy()
+            df_valid = df_valid[df_valid['start'] >= '2023-01-01']
+            st.info(f"סה״כ {len(df_valid)} אצוות במסד")
         except Exception as e:
-            df['תאריך תחילת הפרחה'] = pd.to_datetime(df['תאריך תחילת הפרחה'], errors='coerce')
-            df['תאריך סיום'] = df['תאריך תחילת הפרחה'] + pd.to_timedelta(df['סה״כ ימים בהפרחה'], unit='D')
-            df_valid = df.dropna(subset=['תאריך תחילת הפרחה','תאריך סיום'])
+            st.error(f"שגיאה: {e}")
+            df_valid = pd.DataFrame()
     else:
-        df['תאריך תחילת הפרחה'] = pd.to_datetime(df['תאריך תחילת הפרחה'], errors='coerce')
-        df['תאריך סיום'] = df['תאריך תחילת הפרחה'] + pd.to_timedelta(df['סה״כ ימים בהפרחה'], unit='D')
-        df_valid = df.dropna(subset=['תאריך תחילת הפרחה','תאריך סיום'])
-
-    # פילטרים
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        all_gh = sorted(df_valid['חממה'].unique())
-        selected_gh_gantt = st.multiselect("סנן לפי חממה", all_gh, default=all_gh)
-    with col2:
-        all_strains = sorted(df_valid['זן'].unique())
-        selected_strain = st.multiselect("סנן לפי זן", all_strains, default=[])
-    with col3:
-        n_batches = st.slider("מספר אצוות להצגה", 10, 100, 50)
-
-    # פילטור
-    filtered_gantt = df_valid[df_valid['חממה'].isin(selected_gh_gantt)]
-    if selected_strain:
-        filtered_gantt = filtered_gantt[filtered_gantt['זן'].isin(selected_strain)]
-    # ניקוי נתונים
-    filtered_gantt = filtered_gantt.dropna(subset=['תאריך תחילת הפרחה','תאריך סיום'])
+        df_valid = pd.DataFrame()
 
     today = pd.Timestamp.today()
-    
-    col_time1, col_time2 = st.columns(2)
-    with col_time1:
-        view_mode = st.radio("תצוגה", ["הכל", "פעיל + עתידי", "עבר בלבד"], horizontal=True)
-    with col_time2:
-        months_back = st.slider("חודשים אחורה", 1, 36, 18)
-    
-    past_start = today - pd.DateOffset(months=months_back)
-    
-    # ניקוי - רק אצוות עם תאריכים תקינים אחרי 2020
-    filtered_gantt = filtered_gantt[
-        (filtered_gantt['תאריך תחילת הפרחה'] >= '2020-01-01') &
-        (filtered_gantt['תאריך סיום'] >= '2020-01-01')
-    ]
-    
-    if view_mode == "פעיל + עתידי":
-        filtered_gantt = filtered_gantt[filtered_gantt['תאריך סיום'] >= today]
-    elif view_mode == "עבר בלבד":
-        filtered_gantt = filtered_gantt[
-            (filtered_gantt['תאריך תחילת הפרחה'] >= past_start) &
-            (filtered_gantt['תאריך סיום'] < today)
-        ]
-    else:  # הכל
-        filtered_gantt = filtered_gantt[filtered_gantt['תאריך תחילת הפרחה'] >= past_start]
-    
-    st.markdown(f"**מציג {len(filtered_gantt)} אצוות**")
 
-    # גאנט
-    fig = px.timeline(
-        filtered_gantt,
-        x_start='תאריך תחילת הפרחה',
-        x_end='תאריך סיום',
-        y='חממה',
-        color='זן',
-        title="גאנט אצוות הפרחה",
-        hover_data={
-            'מספר אצווה': True,
-            'זן': True,
-            'חממה': True,
-            'סה״כ ימים בהפרחה': ':.1f',
-            'תאריך תחילת הפרחה': True,
-            'תאריך סיום': True
-        },
-        labels={
-            'תאריך תחילת הפרחה': 'תאריך כניסה',
-            'תאריך סיום': 'תאריך קציר',
-            'סה״כ ימים בהפרחה': 'ימי הפרחה'
-        }
-    )
-    fig.update_yaxes(categoryorder='category ascending')
-    fig.update_layout(
-        height=550,
-        xaxis_title="תאריך",
-        yaxis_title="חממה",
-        legend_title="זן",
-        hoverlabel=dict(bgcolor="white", font_size=13)
-    )
-    # קו אנכי - היום
-    today_str = datetime.today().strftime('%Y-%m-%d')
-    fig.add_vline(
-        x=today_str,
-        line_dash="dash",
-        line_color="red"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-    # סטטיסטיקה
-    st.markdown("---")
-    st.subheader("📊 סיכום גאנט")
     col1, col2, col3 = st.columns(3)
     with col1:
-        active = filtered_gantt[filtered_gantt['תאריך סיום'] >= datetime.today()]
-        st.metric("אצוות פעילות", len(active))
+        all_gh = sorted(df_valid['חממה'].unique()) if len(df_valid)>0 else []
+        selected_gh_gantt = st.multiselect("סנן לפי חממה", all_gh, default=all_gh)
     with col2:
-        completed = filtered_gantt[filtered_gantt['תאריך סיום'] < datetime.today()]
-        st.metric("אצוות שהסתיימו", len(completed))
+        view_mode = st.radio("תצוגה", ["פעיל + עתידי", "הכל", "עבר בלבד"], horizontal=True, index=0)
     with col3:
-        st.metric("ממוצע ימי הפרחה", f"{filtered_gantt['סה״כ ימים בהפרחה'].mean():.1f}")
+        all_strains_g = sorted(df_valid['זן'].unique()) if len(df_valid)>0 else []
+        selected_strain = st.multiselect("סנן לפי זן", all_strains_g, default=[])
+
+    filtered_gantt = df_valid[df_valid['חממה'].isin(selected_gh_gantt)] if selected_gh_gantt else df_valid.copy()
+    if selected_strain:
+        filtered_gantt = filtered_gantt[filtered_gantt['זן'].isin(selected_strain)]
+
+    if view_mode == "פעיל + עתידי":
+        filtered_gantt = filtered_gantt[filtered_gantt['end'] >= today]
+    elif view_mode == "עבר בלבד":
+        filtered_gantt = filtered_gantt[filtered_gantt['end'] < today]
+
+    st.markdown(f"**מציג {len(filtered_gantt)} אצוות**")
+
+    if len(filtered_gantt) == 0:
+        st.warning("אין אצוות להצגה בטווח זה")
+    else:
+        fig = px.timeline(
+            filtered_gantt,
+            x_start='start',
+            x_end='end',
+            y='חממה',
+            color='זן',
+            title="גאנט אצוות הפרחה",
+            hover_data=['מספר אצווה','סה״כ ימים','סוג'],
+            pattern_shape='סוג',
+            pattern_shape_map={'📋 מתוכנן': '/', '✅ היסטורי': ''}
+        )
+        today_str = datetime.today().strftime('%Y-%m-%d')
+        fig.add_vline(x=today_str, line_dash="dash", line_color="red", annotation_text="היום")
+        fig.update_yaxes(categoryorder='category ascending')
+        fig.update_layout(height=550, xaxis_title="תאריך", yaxis_title="חממה")
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown("---")
+        st.subheader("📊 סיכום גאנט")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("פעיל/עתידי", len(filtered_gantt[filtered_gantt['end'] >= today]))
+        with col2:
+            st.metric("הסתיים", len(filtered_gantt[filtered_gantt['end'] < today]))
+        with col3:
+            st.metric("ממוצע ימים", f"{filtered_gantt['סה\'כ ימים'].mean():.1f}")
