@@ -163,7 +163,7 @@ else:
 page = st.sidebar.radio("ניווט", ["🏠 דשבורד", "🔮 חיזוי אצווה", "📋 שיבוץ אצוות", "📊 ניתוח נתונים", "📅 גאנט"])
 
 if page == "📋 שיבוץ אצוות":
-    st.title("📋 שיבוץ אצוות")
+    st.header("שיבוץ אצוות")
     st.markdown("---")
     
     supabase = get_supabase()
@@ -279,9 +279,9 @@ if page == "📋 שיבוץ אצוות":
             rec_results.append({"חממה":gh_opt,"ניסיון":n,"ממוצע":round(avg,1),"זמינות":avail_txt,"ציון":total})
         rec_df = pd.DataFrame(rec_results).sort_values("ציון", ascending=False)
         for _, row in rec_df.head(5).iterrows():
-            color = "#2d6a4f" if row["ציון"]>=70 else "#e6a817" if row["ציון"]>=40 else "#c0392b"
+            color = "#b8ddb8" if row["ציון"]>=70 else "#f5e6a0" if row["ציון"]>=40 else "#f5c0b8"
             mark = " ← נבחרה" if row["חממה"]==new_gh else ""
-            st.markdown(f'''<div style="background:{color};padding:8px 15px;border-radius:8px;color:white;margin:4px 0;">
+            st.markdown(f'''<div style="background:{color};padding:8px 15px;border-radius:8px;color:#1a3a1e;margin:4px 0;font-size:0.9em;">
             <b>חממה {row["חממה"]}{mark}</b> | {row["זמינות"]} | ניסיון: {row["ניסיון"]} | ממוצע: {row["ממוצע"]} ימים | ציון: {row["ציון"]}/100
             </div>''', unsafe_allow_html=True)
         st.markdown("---")
@@ -431,11 +431,10 @@ if page == "🏆 המלצת חממה":
         # הצגת המלצה ראשית
         best = results_df.iloc[0]
         st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #1a472a, #2d6a4f); padding: 20px; 
-                    border-radius: 12px; color: white; text-align: center; margin-bottom: 20px;">
-            <h2>🏆 חממה מומלצת: {best['חממה']}</h2>
-            <h3>ציון התאמה: {best['ציון התאמה']}/100</h3>
-            <p>ניסיון: {best['ניסיון עם הזן']} אצוות | ממוצע: {best['ממוצע ימים']} ימים | {best['פנויה בתאריך']}</p>
+        <div style="background: #e8f5e9; padding: 20px; border-radius: 12px; border: 1px solid #2d6a4f; text-align: center; margin-bottom: 20px;">
+            <h2 style="color:#1a3a1e;font-size:1.3em;">חממה מומלצת: {best['חממה']}</h2>
+            <h3 style="color:#2d6a4f;font-size:1.1em;">ציון התאמה: {best['ציון התאמה']}/100</h3>
+            <p style="color:#333;font-size:0.9em;">ניסיון: {best['ניסיון עם הזן']} אצוות | ממוצע: {best['ממוצע ימים']} ימים | {best['פנויה בתאריך']}</p>
         </div>
         """, unsafe_allow_html=True)
 
