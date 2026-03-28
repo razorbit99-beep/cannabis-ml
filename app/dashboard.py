@@ -263,7 +263,7 @@ if page == "📋 שיבוץ אצוות":
                 filtered_strains = all_strains_list
             
             if filtered_strains:
-                new_strain = st.selectbox("בחר זן", filtered_strains, key='new_strain')
+                new_strain = st.selectbox("Select Strain" if lang_key=="en" else "בחר זן", filtered_strains, key='new_strain')
             else:
                 st.warning("לא נמצא זן - תוכל להוסיף זן חדש למטה")
                 new_strain = strain_search.upper()
@@ -440,7 +440,7 @@ if page == "🏆 המלצת חממה":
 
     col1, col2 = st.columns(2)
     with col1:
-        strain_rec = st.selectbox("בחר זן", sorted(df['זן'].unique()), key='rec_strain')
+        strain_rec = st.selectbox("Select Strain" if lang_key=="en" else "בחר זן", sorted(df['זן'].unique()), key='rec_strain')
     with col2:
         target_date = st.date_input("תאריך כניסה מתוכנן", datetime.today(), key='rec_date')
 
@@ -568,15 +568,15 @@ if page == "🏠 דשבורד":
         st.plotly_chart(fig3, use_container_width=True)
 
 elif page == "🔮 חיזוי אצווה":
-    st.header("חיזוי משך הפרחה")
+    st.header("Batch Duration Prediction" if lang_key=="en" else "חיזוי משך הפרחה")
     st.markdown("---")
 
     col1, col2 = st.columns(2)
     with col1:
-        greenhouse = st.selectbox("בחר חממה", sorted(df['חממה'].unique()))
-        strain = st.selectbox("בחר זן", sorted(df['זן'].unique()))
+        greenhouse = st.selectbox("Select Greenhouse" if lang_key=="en" else "בחר חממה", sorted(df['חממה'].unique()))
+        strain = st.selectbox("Select Strain" if lang_key=="en" else "בחר זן", sorted(df['זן'].unique()))
     with col2:
-        start_date = st.date_input("תאריך כניסה להפרחה", datetime.today())
+        start_date = st.date_input("Entry Date" if lang_key=="en" else "תאריך כניסה להפרחה", datetime.today())
 
     if st.button("🔮 חשב חיזוי", use_container_width=True):
         if gb is not None:
