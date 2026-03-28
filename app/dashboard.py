@@ -591,11 +591,32 @@ elif page == "📅 גאנט":
     if len(filtered_gantt) == 0:
         st.warning("אין אצוות להצגה בטווח זה")
     else:
+        # יצירת שורות נפרדות לאצוות חופפות
+        filtered_gantt = filtered_gantt.sort_values(['חממה','start'])
+        filtered_gantt['שורה'] = ''
+        for gh in filtered_gantt['חממה'].unique():
+            mask = filtered_gantt['חממה'] == gh
+            gh_batches = filtered_gantt[mask].copy()
+            rows = []
+            row_ends = []
+            for _, batch in gh_batches.iterrows():
+                placed = False
+                for i, end in enumerate(row_ends):
+                    if batch['start'] >= end:
+                        rows.append(f"{gh}-{i+1}")
+                        row_ends[i] = batch['end']
+                        placed = True
+                        break
+                if not placed:
+                    rows.append(f"{gh}-{len(row_ends)+1}")
+                    row_ends.append(batch['end'])
+            filtered_gantt.loc[mask, 'שורה'] = rows
+
         fig = px.timeline(
             filtered_gantt,
             x_start='start',
             x_end='end',
-            y='חממה',
+            y='שורה',
             color='זן',
             title="גאנט אצוות הפרחה",
             hover_data=['מספר אצווה','סוג']
