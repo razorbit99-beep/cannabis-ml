@@ -320,7 +320,7 @@ if page == "📋 שיבוץ אצוות":
                 st.error("אין חיבור למסד נתונים")
     
     with tab2:
-        st.subheader("📋 כל האצוות")
+        st.subheader("כל האצוות")
         batches_db = load_batches_db()
         if len(batches_db) > 0:
             show_planned = st.checkbox("הצג רק מתוכננות", value=False)
