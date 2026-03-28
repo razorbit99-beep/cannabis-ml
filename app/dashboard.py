@@ -453,7 +453,7 @@ if page == "🏆 המלצת חממה":
         st.plotly_chart(fig, use_container_width=True)
 
         # טבלה מפורטת
-        st.subheader("📋 פירוט לפי חממה")
+        st.subheader("פירוט לפי חממה")
         st.dataframe(results_df, use_container_width=True, hide_index=True)
 
 if page == "🏠 דשבורד":
@@ -586,7 +586,7 @@ elif page == "📊 ניתוח נתונים":
         st.plotly_chart(fig3, use_container_width=True)
 
     # טבלה נקייה
-    st.subheader("📋 טבלת נתונים")
+    st.subheader("טבלת נתונים")
     cols_show = ['מספר אצווה','זן','חממה','תאריך תחילת הפרחה','סה״כ ימים בהפרחה']
     if 'עונה' in filtered.columns:
         cols_show.append('עונה')
@@ -683,7 +683,7 @@ elif page == "📅 גאנט":
         st.plotly_chart(fig, use_container_width=True)
 
         st.markdown("---")
-        st.subheader("📊 סיכום גאנט")
+        st.subheader("סיכום גאנט")
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("פעיל/עתידי", len(filtered_gantt[filtered_gantt['end'] >= today]))
