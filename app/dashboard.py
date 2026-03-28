@@ -29,12 +29,57 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    body { direction: rtl; }
-    .main { direction: rtl; }
-    h1, h2, h3 { text-align: right; }
+    body { direction: rtl; background-color: #0d1f0f; }
+    .main { direction: rtl; background-color: #0d1f0f; }
+    .stApp { background-color: #0d1f0f; }
+    h1, h2, h3 { text-align: right; color: #ffffff; }
     .stMetric { direction: rtl; }
+    .stMetric label { color: #a8d5a2 !important; }
+    .stMetric [data-testid="metric-container"] { 
+        background: #1a3a1e; 
+        border: 1px solid #2d6a4f;
+        border-radius: 10px;
+        padding: 10px;
+    }
+    [data-testid="stSidebar"] { background-color: #0a1a0c; }
+    [data-testid="stSidebar"] * { color: #ffffff; }
+    .stButton > button {
+        background: linear-gradient(135deg, #1a472a, #2d6a4f);
+        color: white;
+        border: none;
+        border-radius: 8px;
+    }
+    .stButton > button:hover {
+        background: linear-gradient(135deg, #2d6a4f, #40916c);
+    }
+    div[data-testid="stMarkdownContainer"] { color: #e0e0e0; }
+    .stSelectbox label { color: #a8d5a2 !important; }
+    .stMultiSelect label { color: #a8d5a2 !important; }
+    .stRadio label { color: #a8d5a2 !important; }
+    .stSlider label { color: #a8d5a2 !important; }
+    .stTextInput label { color: #a8d5a2 !important; }
+    .stDateInput label { color: #a8d5a2 !important; }
+    .stCheckbox label { color: #a8d5a2 !important; }
+    .stDataFrame { border: 1px solid #2d6a4f; }
+    .stAlert { border-radius: 8px; }
 </style>
 """, unsafe_allow_html=True)
+
+# לוגו וכותרת
+col_logo, col_title = st.columns([1, 4])
+with col_logo:
+    try:
+        st.image('app/logo.png', width=120)
+    except:
+        st.write("🌿")
+with col_title:
+    st.markdown("""
+    <div style="padding-top:15px">
+        <h2 style="color:#c8a951;margin:0;font-family:serif;">My Green Fields</h2>
+        <p style="color:#a8d5a2;margin:0;font-size:14px;">מערכת ניהול וחיזוי הפרחה</p>
+    </div>
+    """, unsafe_allow_html=True)
+st.markdown("<hr style='border-color:#2d6a4f;margin:10px 0 20px 0'>", unsafe_allow_html=True)
 
 def find_file(filename, folders=['app', 'models', '.']):
     for folder in folders:
