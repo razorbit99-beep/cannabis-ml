@@ -5,6 +5,20 @@ import plotly.express as px
 from datetime import datetime, timedelta
 import os
 import joblib
+import os
+
+# חיבור ל-Supabase
+@st.cache_resource
+def get_supabase():
+    try:
+        from supabase import create_client
+        url = st.secrets.get("SUPABASE_URL", "https://gcfqucqiyggpaeuuurtl.supabase.co")
+        key = st.secrets.get("SUPABASE_KEY", "")
+        if key:
+            return create_client(url, key)
+    except:
+        pass
+    return None
 
 st.set_page_config(
     page_title="מערכת חיזוי הפרחה - קנאביס",
