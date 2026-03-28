@@ -86,7 +86,7 @@ with col_title:
     st.markdown("""
     <div style="padding-top:15px">
         <h2 style="color:#c8a951;margin:0;font-family:serif;">My Green Fields</h2>
-        <p style="color:#a8d5a2;margin:0;font-size:14px;">מערכת ניהול וחיזוי הפרחה</p>
+        <p style="color:#a8d5a2;margin:0;font-size:14px;">" + ("Flowering Management System" if lang_key=="en" else "מערכת ניהול וחיזוי הפרחה") + "</p>
     </div>
     """, unsafe_allow_html=True)
 st.markdown("<hr style='border-color:#2d6a4f;margin:10px 0 20px 0'>", unsafe_allow_html=True)
@@ -517,9 +517,9 @@ if page == "🏆 המלצת חממה":
 if page == "🏠 דשבורד":
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric(T.get("total_batches", "סה״כ אצוות"), len(df), "היסטוריה")
+        st.metric(T.get("total_batches", "סה״כ אצוות"), len(df), "Historical" if lang_key=="en" else "היסטוריה")
     with col2:
-        st.metric(T.get("avg_days", "ממוצע ימי הפרחה"), f"{df['סה״כ ימים בהפרחה'].mean():.1f}", "ימים")
+        st.metric(T.get("avg_days", "ממוצע ימי הפרחה"), f"{df['סה״כ ימים בהפרחה'].mean():.1f}", "Days" if lang_key=="en" else "ימים")
     with col3:
         st.metric(T.get("strain_count", "מספר זנים"), df['זן'].nunique(), "זנים שונים")
     with col4:
