@@ -29,19 +29,19 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    body { direction: rtl; background-color: #0d1f0f; }
-    .main { direction: rtl; background-color: #0d1f0f; }
-    .stApp { background-color: #0d1f0f; }
+    body { direction: rtl; }
+    .main { direction: rtl; }
+    .stApp { background-color: #f0f7f0; }
     h1, h2, h3 { text-align: right; color: #ffffff; }
     .stMetric { direction: rtl; }
     .stMetric label { color: #a8d5a2 !important; }
     .stMetric [data-testid="metric-container"] { 
-        background: #1a3a1e; 
+        background: #e8f5e9; 
         border: 1px solid #2d6a4f;
         border-radius: 10px;
         padding: 10px;
     }
-    [data-testid="stSidebar"] { background-color: #0a1a0c; }
+    [data-testid="stSidebar"] { background-color: #1a3a1e; }
     [data-testid="stSidebar"] * { color: #ffffff; }
     .stButton > button {
         background: linear-gradient(135deg, #1a472a, #2d6a4f);
@@ -52,7 +52,7 @@ st.markdown("""
     .stButton > button:hover {
         background: linear-gradient(135deg, #2d6a4f, #40916c);
     }
-    div[data-testid="stMarkdownContainer"] { color: #e0e0e0; }
+    div[data-testid="stMarkdownContainer"] { color: #1a1a1a; }
     .stSelectbox label { color: #a8d5a2 !important; }
     .stMultiSelect label { color: #a8d5a2 !important; }
     .stRadio label { color: #a8d5a2 !important; }
@@ -680,4 +680,8 @@ elif page == "📅 גאנט":
         with col2:
             st.metric("הסתיים", len(filtered_gantt[filtered_gantt['end'] < today]))
         with col3:
-            st.metric("ממוצע ימים", f"{filtered_gantt['סה\'כ ימים'].mean():.1f}")
+            days_col = [c for c in filtered_gantt.columns if 'ימים' in str(c) or 'days' in str(c).lower()]
+            if days_col:
+                st.metric("ממוצע ימים", f"{filtered_gantt[days_col[0]].mean():.1f}")
+            else:
+                st.metric("ממוצע ימים", "N/A")
