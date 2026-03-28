@@ -191,13 +191,11 @@ lang_key = "he" if lang == "עברית" else "en"
 T = TRANSLATIONS[lang_key]
 if lang_key == "en":
     st.markdown("""<style>
-    .main .block-container { direction: ltr !important; }
     [data-testid="stHeadingWithActionElements"] { text-align: left !important; direction: ltr !important; }
     [data-testid="stHeadingWithActionElements"] > div { justify-content: flex-start !important; }
-    .stMetric { direction: ltr !important; text-align: left !important; }
+    .stMetric { direction: ltr !important; }
     .stMetric label { text-align: left !important; }
-    label[data-testid="stWidgetLabel"] { text-align: left !important; direction: ltr !important; }
-    p, div, span { direction: ltr !important; text-align: left !important; }
+    label[data-testid="stWidgetLabel"] { text-align: left !important; direction: ltr !important; float: left !important; }
     </style>""", unsafe_allow_html=True)
 
 col_logo, col_title = st.columns([1, 4])
