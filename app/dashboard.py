@@ -340,7 +340,7 @@ if page == "📋 שיבוץ אצוות":
                 "חיפוש אצווה",
                 options=batch_ids,
                 index=0,
-                placeholder="הקלד או בחר מספר אצווה..."
+                placeholder="הכנס מספר אצווה..."
             )
             action = st.radio("פעולה", ["מחיקה", "עדכון תאריך סיום"])
             
