@@ -31,37 +31,41 @@ st.markdown("""
 <style>
     body { direction: rtl; }
     .main { direction: rtl; }
-    .stApp { background-color: #f0f7f0; }
+    .stApp { background-color: #1a1a2e; }
     h1, h2, h3 { text-align: right; color: #ffffff; }
+    p, label, div { color: #e0e0e0; }
     .stMetric { direction: rtl; }
-    .stMetric label { color: #a8d5a2 !important; }
+    .stMetric label { color: #c8a951 !important; }
     .stMetric [data-testid="metric-container"] { 
-        background: #e8f5e9; 
-        border: 1px solid #2d6a4f;
+        background: #16213e; 
+        border: 1px solid #c8a951;
         border-radius: 10px;
         padding: 10px;
     }
-    [data-testid="stSidebar"] { background-color: #1a3a1e; }
+    .stMetric [data-testid="metric-container"] * { color: #ffffff; }
+    [data-testid="stSidebar"] { background-color: #0f1923; border-right: 2px solid #c8a951; }
     [data-testid="stSidebar"] * { color: #ffffff; }
     .stButton > button {
-        background: linear-gradient(135deg, #1a472a, #2d6a4f);
-        color: white;
+        background: linear-gradient(135deg, #c8a951, #a0822e);
+        color: #0f1923;
         border: none;
         border-radius: 8px;
+        font-weight: bold;
     }
     .stButton > button:hover {
-        background: linear-gradient(135deg, #2d6a4f, #40916c);
+        background: linear-gradient(135deg, #e0c070, #c8a951);
     }
-    div[data-testid="stMarkdownContainer"] { color: #1a1a1a; }
-    .stSelectbox label { color: #a8d5a2 !important; }
-    .stMultiSelect label { color: #a8d5a2 !important; }
-    .stRadio label { color: #a8d5a2 !important; }
-    .stSlider label { color: #a8d5a2 !important; }
-    .stTextInput label { color: #a8d5a2 !important; }
-    .stDateInput label { color: #a8d5a2 !important; }
-    .stCheckbox label { color: #a8d5a2 !important; }
-    .stDataFrame { border: 1px solid #2d6a4f; }
+    div[data-testid="stMarkdownContainer"] { color: #e0e0e0; }
+    .stSelectbox label { color: #c8a951 !important; }
+    .stMultiSelect label { color: #c8a951 !important; }
+    .stRadio label { color: #c8a951 !important; }
+    .stSlider label { color: #c8a951 !important; }
+    .stTextInput label { color: #c8a951 !important; }
+    .stDateInput label { color: #c8a951 !important; }
+    .stCheckbox label { color: #c8a951 !important; }
+    .stDataFrame { border: 1px solid #c8a951; border-radius: 8px; }
     .stAlert { border-radius: 8px; }
+    hr { border-color: #c8a951; }
 </style>
 """, unsafe_allow_html=True)
 
