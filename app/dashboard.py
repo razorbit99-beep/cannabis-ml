@@ -110,7 +110,7 @@ def get_season(month, lk='he'):
     return 'Fall' if lk=='en' else 'סתיו'
 
 def predict_ml(model, feature_cols, mapping, df, greenhouse, strain, start_date):
-    season = get_season(start_date.month)
+    season = get_season(start_date.month, lang_key)
     greenhouses = mapping['חממות']
     strains = mapping['זנים']
     seasons = mapping['עונות']
@@ -368,7 +368,7 @@ if page == "📋 שיבוץ אצוות":
                         'start_date': str(new_date),
                         'end_date': str(end_date_pred.date()),
                         'total_days': predicted_days,
-                        'season': get_season(new_date.month),
+                        'season': get_season(new_date.month, lang_key),
                         'is_planned': True
                     }
                     supabase.table('batches').upsert(record, on_conflict='batch_id').execute()
@@ -572,7 +572,7 @@ elif page == "🔮 חיזוי אצווה":
         else:
             hist = df[(df['חממה'] == greenhouse) & (df['זן'] == strain)]['סה״כ ימים בהפרחה']
             pred = round(hist.mean() if len(hist) > 0 else df['סה״כ ימים בהפרחה'].mean(), 1)
-            season = get_season(start_date.month)
+            season = get_season(start_date.month, lang_key)
             method = "📊 ממוצע היסטורי"
 
         end_date = datetime.combine(start_date, datetime.min.time()) + timedelta(days=pred)
