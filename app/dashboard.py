@@ -61,6 +61,7 @@ st.markdown("""
     }
     .stSelectbox label { color: #2d6a4f !important; font-weight: 500; }
     .stMultiSelect label { color: #2d6a4f !important; font-weight: 500; }
+    .stMultiSelect span[data-baseweb="tag"] { display: none !important; }
     .stRadio label { color: #2d6a4f !important; font-weight: 500; }
     .stSlider label { color: #2d6a4f !important; font-weight: 500; }
     .stTextInput label { color: #2d6a4f !important; font-weight: 500; }
