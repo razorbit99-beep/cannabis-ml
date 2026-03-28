@@ -596,7 +596,7 @@ elif page == "📊 ניתוח נתונים":
     st.dataframe(display_df, use_container_width=True, hide_index=True)
 
 elif page == "📅 גאנט":
-    st.title("📅 גאנט הפרחה")
+    st.subheader("גאנט הפרחה")
     st.markdown("---")
 
     supabase_gantt = get_supabase()
@@ -674,7 +674,8 @@ elif page == "📅 גאנט":
             y='שורה',
             color='זן',
             title="גאנט אצוות הפרחה",
-            hover_data=['מספר אצווה','סוג']
+            hover_data=['מספר אצווה','סוג'],
+            color_discrete_sequence=['#a8c8e8','#b8ddb8','#f5c8a0','#d4a8b8','#c8c8e8','#f5e0a0','#a8d4d0','#e8c0b8','#c0d4a8','#d4c0e0']
         )
         today_str = datetime.today().strftime('%Y-%m-%d')
         fig.add_vline(x=today_str, line_dash="dash", line_color="red")
@@ -683,7 +684,7 @@ elif page == "📅 גאנט":
         st.plotly_chart(fig, use_container_width=True)
 
         st.markdown("---")
-        st.subheader("סיכום גאנט")
+        st.subheader("סיכום")
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("פעיל/עתידי", len(filtered_gantt[filtered_gantt['end'] >= today]))
