@@ -86,7 +86,7 @@ with col_title:
     st.markdown("""
     <div style="padding-top:15px">
         <h2 style="color:#c8a951;margin:0;font-family:serif;">My Green Fields</h2>
-        <p style="color:#a8d5a2;margin:0;font-size:14px;">" + ("Flowering Management System" if lang_key=="en" else "מערכת ניהול וחיזוי הפרחה") + "</p>
+        <p style="color:#a8d5a2;margin:0;font-size:14px;">{("Flowering Management System" if lang_key=="en" else "מערכת ניהול וחיזוי הפרחה")}</p>
     </div>
     """, unsafe_allow_html=True)
 st.markdown("<hr style='border-color:#2d6a4f;margin:10px 0 20px 0'>", unsafe_allow_html=True)
@@ -521,9 +521,9 @@ if page == "🏠 דשבורד":
     with col2:
         st.metric(T.get("avg_days", "ממוצע ימי הפרחה"), f"{df['סה״כ ימים בהפרחה'].mean():.1f}", "Days" if lang_key=="en" else "ימים")
     with col3:
-        st.metric(T.get("strain_count", "מספר זנים"), df['זן'].nunique(), "זנים שונים")
+        st.metric(T.get("strain_count", "מספר זנים"), df['זן'].nunique(), "Different Strains" if lang_key=="en" else "זנים שונים")
     with col4:
-        st.metric(T.get("greenhouse_count", "מספר חממות"), df['חממה'].nunique(), "חממות פעילות")
+        st.metric(T.get("greenhouse_count", "מספר חממות"), df['חממה'].nunique(), "Active Greenhouses" if lang_key=="en" else "חממות פעילות")
 
     st.markdown("---")
     col1, col2 = st.columns(2)
@@ -547,7 +547,7 @@ if page == "🏠 דשבורד":
         season_avg = df.groupby('עונה')['סה״כ ימים בהפרחה'].mean().reset_index()
         fig3 = px.bar(season_avg, x='עונה', y='סה״כ ימים בהפרחה', color='עונה',
                       title="Avg Flowering Days by Season" if lang_key=="en" else "ממוצע ימי הפרחה לפי עונה",
-                      color_discrete_map={'חורף':'#a8c8e8','אביב':'#b8ddb8','קיץ':'#f5c8a0','סתיו':'#d4a8b8'})
+                      color_discrete_map={('Winter' if lang_key=='en' else 'חורף'):'#a8c8e8',('Spring' if lang_key=='en' else 'אביב'):'#b8ddb8',('Summer' if lang_key=='en' else 'קיץ'):'#f5c8a0',('Fall' if lang_key=='en' else 'סתיו'):'#d4a8b8'})
         fig3.update_layout(showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
         st.plotly_chart(fig3, use_container_width=True)
 
