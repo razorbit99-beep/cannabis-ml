@@ -550,7 +550,7 @@ elif page == "📅 גאנט":
             res = supabase_gantt.table('batches').select('*').order('start_date', desc=False).limit(500).execute()
             raw = pd.DataFrame(res.data)
             raw['start'] = pd.to_datetime(raw['start_date'], errors='coerce')
-            raw['end'] = pd.to_datetime(raw['end_date'], errors='coerce')
+            raw['end'] = pd.to_datetime(raw['end_date'].astype(str).str[:10], format='%Y-%m-%d', errors='coerce')
             raw['זן'] = raw['strain']
             raw['חממה'] = raw['greenhouse']
             raw['מספר אצווה'] = raw['batch_id']
