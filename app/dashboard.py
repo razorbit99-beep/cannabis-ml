@@ -445,7 +445,7 @@ if page == "🏆 המלצת חממה":
 
         # גרף ציונים
         fig = px.bar(results_df, x='חממה', y='ציון התאמה',
-                     color='ציון התאמה', color_continuous_scale='RdYlGn',
+                     color='ציון התאמה', color_continuous_scale=['#f5c0b8','#f5e6a0','#b8ddb8'],
                      title=f"ציון התאמה לפי חממה - זן {strain_rec}",
                      text='ציון התאמה')
         fig.update_traces(textposition='outside')
@@ -538,7 +538,7 @@ elif page == "🔮 חיזוי אצווה":
             st.plotly_chart(fig, use_container_width=True)
 
 elif page == "📊 ניתוח נתונים":
-    st.title("📊 ניתוח נתונים")
+    st.subheader("ניתוח נתונים")
     st.markdown("---")
 
     selected_gh = st.multiselect("בחר חממות", sorted(df['חממה'].unique()),
