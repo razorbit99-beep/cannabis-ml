@@ -453,7 +453,6 @@ if page == "🏆 המלצת חממה":
         st.dataframe(results_df, use_container_width=True, hide_index=True)
 
 if page == "🏠 דשבורד":
-    st.title("🌿 מערכת חיזוי הפרחה - קנאביס")
     st.markdown("---")
 
     col1, col2, col3, col4 = st.columns(4)
