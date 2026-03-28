@@ -478,7 +478,7 @@ if page == "🏠 דשבורד":
         fig2 = px.bar(x=top_strains.values, y=top_strains.index, orientation='h',
                       title="10 זנים נפוצים", color=top_strains.values,
                       color_continuous_scale=['#d4edd4','#74b474'], labels={'x': 'מספר אצוות', 'y': 'זן'})
-        fig2.update_layout(height=350)
+        fig2.update_layout(height=350, coloraxis_showscale=False, showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
         st.plotly_chart(fig2, use_container_width=True)
 
     if 'עונה' in df.columns:
