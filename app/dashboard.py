@@ -491,7 +491,7 @@ if page == "🏠 דשבורד":
         season_avg = df.groupby('עונה')['סה״כ ימים בהפרחה'].mean().reset_index()
         fig3 = px.bar(season_avg, x='עונה', y='סה״כ ימים בהפרחה', color='עונה', color_discrete_sequence=['#2d6a4f','#c8a951','#e76f51','#a8dadc'],
                       title="ממוצע ימי הפרחה לפי עונה",
-                      color_discrete_map={'חורף':'#74b9ff','אביב':'#55efc4','קיץ':'#fdcb6e','סתיו':'#e17055'})
+                      color_discrete_map={'חורף':'#2d6a4f','אביב':'#c8a951','קיץ':'#e76f51','סתיו':'#40916c'})
         fig3.update_layout(showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), xaxis=dict(gridcolor='#e8e8e8'), yaxis=dict(gridcolor='#e8e8e8'))
         st.plotly_chart(fig3, use_container_width=True)
 
