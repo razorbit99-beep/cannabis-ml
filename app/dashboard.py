@@ -587,23 +587,30 @@ elif page == "📅 גאנט":
     # ניקוי נתונים
     filtered_gantt = filtered_gantt.dropna(subset=['תאריך תחילת הפרחה','תאריך סיום'])
 
+    today = pd.Timestamp.today()
+    
     col_time1, col_time2 = st.columns(2)
     with col_time1:
         view_mode = st.radio("תצוגה", ["הכל", "פעיל + עתידי", "עבר בלבד"], horizontal=True)
     with col_time2:
-        date_range = st.slider("חודשים קדימה להצגה", 1, 24, 12)
+        months_back = st.slider("חודשים אחורה", 1, 36, 18)
     
-    today = pd.Timestamp.today()
-    future_end = today + pd.DateOffset(months=date_range)
-    past_start = today - pd.DateOffset(months=18)
+    past_start = today - pd.DateOffset(months=months_back)
+    
+    # ניקוי - רק אצוות עם תאריכים תקינים אחרי 2020
+    filtered_gantt = filtered_gantt[
+        (filtered_gantt['תאריך תחילת הפרחה'] >= '2020-01-01') &
+        (filtered_gantt['תאריך סיום'] >= '2020-01-01')
+    ]
     
     if view_mode == "פעיל + עתידי":
-        filtered_gantt = filtered_gantt[
-            (filtered_gantt['תאריך סיום'] >= today) | 
-            (filtered_gantt['תאריך תחילת הפרחה'] >= today)
-        ]
+        filtered_gantt = filtered_gantt[filtered_gantt['תאריך סיום'] >= today]
     elif view_mode == "עבר בלבד":
-        filtered_gantt = filtered_gantt[filtered_gantt['תאריך תחילת הפרחה'] < today]
+        filtered_gantt = filtered_gantt[
+            (filtered_gantt['תאריך תחילת הפרחה'] >= past_start) &
+            (filtered_gantt['תאריך סיום'] < today)
+        ]
+    else:  # הכל
         filtered_gantt = filtered_gantt[filtered_gantt['תאריך תחילת הפרחה'] >= past_start]
     
     st.markdown(f"**מציג {len(filtered_gantt)} אצוות**")
