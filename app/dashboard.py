@@ -154,14 +154,49 @@ if df is None:
     st.error("לא נמצאו נתונים")
     st.stop()
 
-st.sidebar.title("🌿 מערכת חיזוי הפרחה")
+
+# בחירת שפה
+TRANSLATIONS = {
+    "he": {
+        "title": "מערכת חיזוי הפרחה",
+        "nav": "ניווט",
+        "pages": ["🏠 דשבורד", "🔮 חיזוי אצווה", "📋 שיבוץ אצוות", "📊 ניתוח נתונים", "📅 גאנט"],
+        "page_names": {"🏠 דשבורד": "דשבורד", "🔮 חיזוי אצווה": "חיזוי אצווה", "📋 שיבוץ אצוות": "שיבוץ אצוות", "📊 ניתוח נתונים": "ניתוח נתונים", "📅 גאנט": "גאנט"},
+        "ml_active": "✅ מודל ML פעיל",
+        "ml_inactive": "⚠️ מצב ממוצע היסטורי",
+        "greenhouse_count": "מספר חממות",
+        "strain_count": "מספר זנים",
+        "avg_days": "ממוצע ימי הפרחה",
+        "total_batches": "סה״כ אצוות",
+        "language": "שפה / Language",
+    },
+    "en": {
+        "title": "Flowering Prediction System",
+        "nav": "Navigation",
+        "pages": ["🏠 Dashboard", "🔮 Batch Prediction", "📋 Batch Assignment", "📊 Data Analysis", "📅 Gantt"],
+        "page_names": {"🏠 Dashboard": "Dashboard", "🔮 Batch Prediction": "Batch Prediction", "📋 Batch Assignment": "Batch Assignment", "📊 Data Analysis": "Data Analysis", "📅 Gantt": "Gantt"},
+        "ml_active": "✅ ML Model Active",
+        "ml_inactive": "⚠️ Historical Average Mode",
+        "greenhouse_count": "Greenhouses",
+        "strain_count": "Strains",
+        "avg_days": "Avg. Flowering Days",
+        "total_batches": "Total Batches",
+        "language": "שפה / Language",
+    }
+}
+
+lang = st.sidebar.selectbox("🌐 שפה / Language", ["עברית", "English"], label_visibility="collapsed")
+lang_key = "he" if lang == "עברית" else "en"
+T = TRANSLATIONS[lang_key]
+
+st.sidebar.title("🌿 " + T["title"])
 st.sidebar.markdown("---")
 if gb is not None:
-    st.sidebar.success("✅ מודל ML פעיל")
+    st.sidebar.success(T["ml_active"])
 else:
-    st.sidebar.warning("⚠️ מצב ממוצע היסטורי")
+    st.sidebar.warning(T["ml_inactive"])
 
-page = st.sidebar.radio("ניווט", ["🏠 דשבורד", "🔮 חיזוי אצווה", "📋 שיבוץ אצוות", "📊 ניתוח נתונים", "📅 גאנט"])
+page = st.sidebar.radio(T["nav"], T["pages"])
 
 if page == "📋 שיבוץ אצוות":
     st.subheader("שיבוץ אצוות")
