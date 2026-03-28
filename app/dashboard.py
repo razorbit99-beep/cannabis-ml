@@ -338,9 +338,9 @@ if page == "📋 שיבוץ אצוות":
             batch_ids = batches_db['batch_id'].tolist()
             selected_batch = st.selectbox(
                 "חיפוש אצווה",
-                options=batch_ids,
+                options=[""] + batch_ids,
                 index=0,
-                placeholder="הכנס מספר אצווה..."
+                format_func=lambda x: "הכנס מספר אצווה..." if x == "" else x
             )
             action = st.radio("פעולה", ["מחיקה", "עדכון תאריך סיום"])
             
