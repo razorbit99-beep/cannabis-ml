@@ -192,6 +192,7 @@ T = TRANSLATIONS[lang_key]
 if lang_key == "en":
     st.markdown("""<style>
     [data-testid="stHeadingWithActionElements"] { text-align: left !important; direction: ltr !important; }
+    [data-testid="stHeadingWithActionElements"] > div { justify-content: flex-start !important; }
     .stMetric { direction: ltr !important; }
     .stMetric label { text-align: left !important; }
     </style>""", unsafe_allow_html=True)
