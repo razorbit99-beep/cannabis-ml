@@ -73,7 +73,7 @@ st.markdown("""
 col_logo, col_title = st.columns([1, 4])
 with col_logo:
     try:
-        st.image('app/logo.png', width=120)
+        st.image('app/logo_white.png', width=120)
     except:
         st.write("🌿")
 with col_title:
