@@ -539,7 +539,7 @@ if page == "🏠 דשבורד":
         top_strains = df['זן'].value_counts().head(10)
         fig2 = px.bar(x=top_strains.values, y=top_strains.index, orientation='h',
                       title="Top 10 Strains" if lang_key=="en" else "זנים נפוצים - 10 הראשונים", color=top_strains.values,
-                      color_continuous_scale=['#d4edd4','#74b474'], labels={'x': 'מספר אצוות', 'y': 'זן'})
+                      color_continuous_scale=['#d4edd4','#74b474'], labels={'x': 'Batches' if lang_key=='en' else 'מספר אצוות', 'y': 'Strain' if lang_key=='en' else 'זן'})
         fig2.update_layout(height=350, coloraxis_showscale=False, showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
         st.plotly_chart(fig2, use_container_width=True)
 
@@ -739,7 +739,7 @@ elif page == "📅 גאנט":
         fig.add_vline(x=today_str, line_dash="dash", line_color="#2d6a4f", line_width=1.5)
         fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right', margin=dict(l=10,r=10,t=40,b=10))
         fig.update_yaxes(categoryorder='category ascending')
-        fig.update_layout(height=550, xaxis_title="תאריך", yaxis_title="חממה", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
+        fig.update_layout(height=550, xaxis_title='Date' if lang_key=='en' else 'תאריך', yaxis_title='Greenhouse' if lang_key=='en' else 'חממה', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
         st.plotly_chart(fig, use_container_width=True)
 
         st.markdown("---")
