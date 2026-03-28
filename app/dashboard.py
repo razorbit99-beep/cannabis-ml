@@ -133,7 +133,25 @@ if page == "📋 שיבוץ אצוות":
         st.subheader("➕ הוספת אצווה חדשה")
         col1, col2, col3 = st.columns(3)
         with col1:
-            new_strain = st.selectbox("זן", sorted(df['זן'].unique()), key='new_strain')
+            all_strains_list = sorted(df['זן'].unique().tolist())
+            strain_search = st.text_input("🔍 חיפוש זן", placeholder="הקלד שם זן...")
+            if strain_search:
+                filtered_strains = [s for s in all_strains_list if strain_search.upper() in s.upper()]
+            else:
+                filtered_strains = all_strains_list
+            
+            if filtered_strains:
+                new_strain = st.selectbox("בחר זן", filtered_strains, key='new_strain')
+            else:
+                st.warning("לא נמצא זן - תוכל להוסיף זן חדש למטה")
+                new_strain = strain_search.upper()
+            
+            # הוספת זן חדש
+            with st.expander("➕ הוסף זן חדש"):
+                new_strain_name = st.text_input("שם הזן החדש (עד 5 תווים)", max_chars=5).upper()
+                if new_strain_name and st.button("הוסף זן"):
+                    new_strain = new_strain_name
+                    st.success(f"✅ זן {new_strain_name} יתווסף עם האצווה")
         with col2:
             new_gh = st.selectbox("חממה", sorted(df['חממה'].unique()), key='new_gh')
         with col3:
