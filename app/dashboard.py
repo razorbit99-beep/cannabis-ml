@@ -189,6 +189,13 @@ with col_en:
 lang = "עברית" if st.session_state.lang == "he" else "English"
 lang_key = "he" if lang == "עברית" else "en"
 T = TRANSLATIONS[lang_key]
+if lang_key == "en":
+    st.markdown("""<style>
+    body { direction: ltr !important; }
+    .main { direction: ltr !important; }
+    h1, h2, h3 { text-align: left !important; }
+    div[data-testid="stMarkdownContainer"] { text-align: left !important; }
+    </style>""", unsafe_allow_html=True)
 
 col_logo, col_title = st.columns([1, 4])
 with col_logo:
