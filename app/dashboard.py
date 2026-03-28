@@ -603,7 +603,7 @@ elif page == "📅 גאנט":
             pattern_shape_map={'📋 מתוכנן': '/', '✅ היסטורי': ''}
         )
         today_str = datetime.today().strftime('%Y-%m-%d')
-        fig.add_vline(x=today_str, line_dash="dash", line_color="red", annotation_text="היום")
+        fig.add_vline(x=today_str, line_dash="dash", line_color="red")
         fig.update_yaxes(categoryorder='category ascending')
         fig.update_layout(height=550, xaxis_title="תאריך", yaxis_title="חממה")
         st.plotly_chart(fig, use_container_width=True)
