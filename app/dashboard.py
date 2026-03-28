@@ -544,9 +544,30 @@ elif page == "📅 גאנט":
     st.title("📅 גאנט הפרחה")
     st.markdown("---")
 
-    df['תאריך תחילת הפרחה'] = pd.to_datetime(df['תאריך תחילת הפרחה'], errors='coerce')
-    df['תאריך סיום'] = df['תאריך תחילת הפרחה'] + pd.to_timedelta(df['סה״כ ימים בהפרחה'], unit='D')
-    df_valid = df.dropna(subset=['תאריך תחילת הפרחה','תאריך סיום'])
+    # טעינת נתונים מ-Supabase + היסטוריה
+    supabase_gantt = get_supabase()
+    if supabase_gantt:
+        try:
+            res = supabase_gantt.table('batches').select('*').execute()
+            db_df = pd.DataFrame(res.data)
+            db_df = db_df.rename(columns={
+                'batch_id':'מספר אצווה','strain':'זן','greenhouse':'חממה',
+                'start_date':'תאריך תחילת הפרחה','end_date':'תאריך סיום',
+                'total_days':'סה״כ ימים בהפרחה'
+            })
+            db_df['תאריך תחילת הפרחה'] = pd.to_datetime(db_df['תאריך תחילת הפרחה'], errors='coerce')
+            db_df['תאריך סיום'] = pd.to_datetime(db_df['תאריך סיום'], errors='coerce')
+            db_df['סוג'] = db_df.get('is_planned', False).apply(lambda x: '📋 מתוכנן' if x else '✅ היסטורי')
+            df_valid = db_df.dropna(subset=['תאריך תחילת הפרחה','תאריך סיום'])
+            st.success(f"✅ נטענו {len(df_valid)} אצוות מהמסד")
+        except Exception as e:
+            df['תאריך תחילת הפרחה'] = pd.to_datetime(df['תאריך תחילת הפרחה'], errors='coerce')
+            df['תאריך סיום'] = df['תאריך תחילת הפרחה'] + pd.to_timedelta(df['סה״כ ימים בהפרחה'], unit='D')
+            df_valid = df.dropna(subset=['תאריך תחילת הפרחה','תאריך סיום'])
+    else:
+        df['תאריך תחילת הפרחה'] = pd.to_datetime(df['תאריך תחילת הפרחה'], errors='coerce')
+        df['תאריך סיום'] = df['תאריך תחילת הפרחה'] + pd.to_timedelta(df['סה״כ ימים בהפרחה'], unit='D')
+        df_valid = df.dropna(subset=['תאריך תחילת הפרחה','תאריך סיום'])
 
     # פילטרים
     col1, col2, col3 = st.columns(3)
