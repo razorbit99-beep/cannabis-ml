@@ -516,25 +516,25 @@ if page == "🏆 המלצת חממה":
 if page == "🏠 דשבורד":
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("סה״כ אצוות", len(df), "היסטוריה")
+        st.metric(T.get("total_batches", "סה״כ אצוות"), len(df), "היסטוריה")
     with col2:
-        st.metric("ממוצע ימי הפרחה", f"{df['סה״כ ימים בהפרחה'].mean():.1f}", "ימים")
+        st.metric(T.get("avg_days", "ממוצע ימי הפרחה"), f"{df['סה״כ ימים בהפרחה'].mean():.1f}", "ימים")
     with col3:
-        st.metric("מספר זנים", df['זן'].nunique(), "זנים שונים")
+        st.metric(T.get("strain_count", "מספר זנים"), df['זן'].nunique(), "זנים שונים")
     with col4:
-        st.metric("מספר חממות", df['חממה'].nunique(), "חממות פעילות")
+        st.metric(T.get("greenhouse_count", "מספר חממות"), df['חממה'].nunique(), "חממות פעילות")
 
     st.markdown("---")
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("ימי הפרחה לפי חממה")
+        st.subheader("Flowering Days by Greenhouse" if lang_key == "en" else "ימי הפרחה לפי חממה")
         fig = px.box(df, x='חממה', y='סה״כ ימים בהפרחה', color_discrete_sequence=['#a8c8e8','#b8ddb8','#f5c8a0','#d4a8b8','#c8c8e8','#f5e0a0','#a8d4d0','#e8c0b8','#c0d4a8','#d4c0e0'], color='חממה',
                      title="התפלגות ימי הפרחה לפי חממה")
         fig.update_layout(showlegend=False, height=350, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
         st.plotly_chart(fig, use_container_width=True)
 
     with col2:
-        st.subheader("הזנים הנפוצים ביותר")
+        st.subheader("Most Common Strains" if lang_key == "en" else "הזנים הנפוצים ביותר")
         top_strains = df['זן'].value_counts().head(10)
         fig2 = px.bar(x=top_strains.values, y=top_strains.index, orientation='h',
                       title="זנים נפוצים - 10 הראשונים", color=top_strains.values,
