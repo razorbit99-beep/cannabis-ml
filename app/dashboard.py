@@ -160,7 +160,7 @@ if gb is not None:
 else:
     st.sidebar.warning("⚠️ מצב ממוצע היסטורי")
 
-page = st.sidebar.radio("ניווט", ["🏠 דשבורד", "🔮 חיזוי אצווה", "🏆 המלצת חממה", "📋 שיבוץ אצוות", "📊 ניתוח נתונים", "📅 גאנט"])
+page = st.sidebar.radio("ניווט", ["🏠 דשבורד", "🔮 חיזוי אצווה", "📋 שיבוץ אצוות", "📊 ניתוח נתונים", "📅 גאנט"])
 
 if page == "📋 שיבוץ אצוות":
     st.title("📋 שיבוץ אצוות")
@@ -361,143 +361,8 @@ if page == "📋 שיבוץ אצוות":
                         except Exception as e:
                             st.error(f"שגיאה: {e}")
 
-if page == "🏆 המלצת חממה":
-    st.title("🏆 המלצת חממה חכמה")
-    st.markdown("---")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        strain_rec = st.selectbox("בחר זן", sorted(df['זן'].unique()), key='rec_strain')
-    with col2:
-        target_date = st.date_input("תאריך כניסה מתוכנן", datetime.today(), key='rec_date')
-
-    if st.button("🏆 מצא חממה מומלצת", use_container_width=True):
-        st.markdown("---")
-
-        # חישוב ביצועי כל חממה עם הזן הזה
-        results = []
-        all_gh = sorted(df['חממה'].unique())
-
-        for gh in all_gh:
-            # ביצועי הזן בחממה זו
-            strain_in_gh = df[(df['חממה'] == gh) & (df['זן'] == strain_rec)]
-            all_in_gh = df[df['חממה'] == gh]
-
-            # מספר אצוות של הזן בחממה
-            n_strain = len(strain_in_gh)
-
-            # ממוצע ימי הפרחה של הזן בחממה
-            if n_strain > 0:
-                avg_days = strain_in_gh['סה״כ ימים בהפרחה'].mean()
-                std_days = strain_in_gh['סה״כ ימים בהפרחה'].std()
-                if pd.isna(std_days): std_days = 0
-                experience_score = min(n_strain * 15, 40)  # ניסיון - עד 40 נקודות
-                stability_score = max(0, 30 - std_days * 2)  # יציבות - עד 30 נקודות
-            else:
-                # אין ניסיון עם הזן - משתמשים בממוצע החממה
-                avg_days = all_in_gh['סה״כ ימים בהפרחה'].mean() if len(all_in_gh) > 0 else 46
-                std_days = all_in_gh['סה״כ ימים בהפרחה'].std() if len(all_in_gh) > 0 else 5
-                if pd.isna(std_days): std_days = 0
-                experience_score = 0
-                stability_score = max(0, 20 - std_days * 2)
-
-            # בדיקת זמינות בגאנט
-            df_gantt_check = df.copy()
-            df_gantt_check['תאריך תחילת הפרחה'] = pd.to_datetime(df_gantt_check['תאריך תחילת הפרחה'], errors='coerce')
-            df_gantt_check['תאריך סיום'] = df_gantt_check['תאריך תחילת הפרחה'] + pd.to_timedelta(df_gantt_check['סה״כ ימים בהפרחה'], unit='D')
-            target_dt = pd.Timestamp(target_date)
-            active_in_gh = df_gantt_check[
-                (df_gantt_check['חממה'] == gh) &
-                (df_gantt_check['תאריך תחילת הפרחה'] <= target_dt) &
-                (df_gantt_check['תאריך סיום'] >= target_dt)
-            ]
-            is_available = len(active_in_gh) == 0
-            availability_score = 30 if is_available else 0
-
-            # ציון כולל
-            total_score = experience_score + stability_score + availability_score
-
-            results.append({
-                'חממה': gh,
-                'ניסיון עם הזן': n_strain,
-                'ממוצע ימים': round(avg_days, 1) if not pd.isna(avg_days) else 46,
-                'יציבות': round(std_days, 1) if not pd.isna(std_days) else 5,
-                'פנויה בתאריך': '✅ כן' if is_available else '❌ תפוסה',
-                'ציון התאמה': round(total_score),
-            })
-
-        results_df = pd.DataFrame(results).sort_values('ציון התאמה', ascending=False)
-
-        # הצגת המלצה ראשית
-        best = results_df.iloc[0]
-        st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #1a472a, #2d6a4f); padding: 20px; 
-                    border-radius: 12px; color: white; text-align: center; margin-bottom: 20px;">
-            <h2>🏆 חממה מומלצת: {best['חממה']}</h2>
-            <h3>ציון התאמה: {best['ציון התאמה']}/100</h3>
-            <p>ניסיון: {best['ניסיון עם הזן']} אצוות | ממוצע: {best['ממוצע ימים']} ימים | {best['פנויה בתאריך']}</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # גרף ציונים
-        fig = px.bar(results_df, x='חממה', y='ציון התאמה',
-                     color='ציון התאמה', color_continuous_scale='RdYlGn',
-                     title=f"ציון התאמה לפי חממה - זן {strain_rec}",
-                     text='ציון התאמה')
-        fig.update_traces(textposition='outside')
-        fig.update_layout(coloraxis_showscale=False, yaxis_range=[0, 105], paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), xaxis=dict(gridcolor='#e8e8e8'), yaxis=dict(gridcolor='#e8e8e8'))
-        st.plotly_chart(fig, use_container_width=True)
-
-        # טבלה מפורטת
-        st.subheader("📋 פירוט לפי חממה")
-        st.dataframe(results_df, use_container_width=True, hide_index=True)
-
-if page == "🏠 דשבורד":
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("סה״כ אצוות", len(df), "היסטוריה")
-    with col2:
-        st.metric("ממוצע ימי הפרחה", f"{df['סה״כ ימים בהפרחה'].mean():.1f}", "ימים")
-    with col3:
-        st.metric("מספר זנים", df['זן'].nunique(), "זנים שונים")
-    with col4:
-        st.metric("מספר חממות", df['חממה'].nunique(), "חממות פעילות")
-
-    st.markdown("---")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("📊 ימי הפרחה לפי חממה")
-        fig = px.box(df, x='חממה', y='סה״כ ימים בהפרחה', color_discrete_sequence=['#a8c8e8','#b8ddb8','#f5c8a0','#d4a8b8','#c8c8e8','#f5e0a0','#a8d4d0','#e8c0b8','#c0d4a8','#d4c0e0'], color='חממה',
-                     title="התפלגות ימי הפרחה לפי חממה")
-        fig.update_layout(showlegend=False, height=350, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), xaxis=dict(gridcolor='#e8e8e8'), yaxis=dict(gridcolor='#e8e8e8'))
-        st.plotly_chart(fig, use_container_width=True)
-
-    with col2:
-        st.subheader("🌱 הזנים הנפוצים ביותר")
-        top_strains = df['זן'].value_counts().head(10)
-        fig2 = px.bar(x=top_strains.values, y=top_strains.index, orientation='h',
-                      title="10 זנים נפוצים", color=top_strains.values,
-                      color_continuous_scale=['#d4edd4','#74b474'],
-                      labels={'x': 'מספר אצוות', 'y': 'זן'})
-        fig2.update_layout(
-            height=350, coloraxis_showscale=False, showlegend=False,
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)',
-            font=dict(family='Arial', color='#1a3a1e'),
-            xaxis=dict(gridcolor='#e0e0e0', linecolor='#c8a951'),
-            yaxis=dict(gridcolor='#e0e0e0', linecolor='#c8a951')
-        )
-        st.plotly_chart(fig2, use_container_width=True)
-
-    if 'עונה' in df.columns:
-        season_avg = df.groupby('עונה')['סה״כ ימים בהפרחה'].mean().reset_index()
-        fig3 = px.bar(season_avg, x='עונה', y='סה״כ ימים בהפרחה', color='עונה', color_discrete_sequence=['#2d6a4f','#c8a951','#e76f51','#a8dadc'],
-                      title="ממוצע ימי הפרחה לפי עונה",
-                      color_discrete_map={'חורף':'#a8c8e8','אביב':'#b8ddb8','קיץ':'#f5c8a0','סתיו':'#d4a8b8'})
-        fig3.update_layout(showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), xaxis=dict(gridcolor='#e8e8e8'), yaxis=dict(gridcolor='#e8e8e8'))
-        st.plotly_chart(fig3, use_container_width=True)
-
 elif page == "🔮 חיזוי אצווה":
-    st.title("🔮 חיזוי משך הפרחה")
+    st.header("חיזוי משך הפרחה")
     st.markdown("---")
 
     col1, col2 = st.columns(2)
@@ -557,7 +422,7 @@ elif page == "📊 ניתוח נתונים":
                   title="ממוצע ימי הפרחה לפי חודש כניסה",
                   color='סה״כ ימים בהפרחה', color_continuous_scale='RdYlGn_r',
                   labels={'סה״כ ימים בהפרחה': 'ממוצע ימי הפרחה', 'חודש': 'חודש כניסה להפרחה'})
-    fig1.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), xaxis=dict(gridcolor='#e8e8e8'), yaxis=dict(gridcolor='#e8e8e8'))
+    fig1.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right', xaxis=dict(gridcolor='#e8e8e8'), yaxis=dict(gridcolor='#e8e8e8'))
     st.plotly_chart(fig1, use_container_width=True)
 
     col1, col2 = st.columns(2)
@@ -572,7 +437,7 @@ elif page == "📊 ניתוח נתונים":
                       color='ממוצע ימים', color_continuous_scale='RdYlGn_r',
                       hover_data=['מספר אצוות'],
                       labels={'ממוצע ימים': 'ממוצע ימי הפרחה', 'חממה': 'חממה'})
-        fig2.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), xaxis=dict(gridcolor='#e8e8e8'), yaxis=dict(gridcolor='#e8e8e8'))
+        fig2.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right', xaxis=dict(gridcolor='#e8e8e8'), yaxis=dict(gridcolor='#e8e8e8'))
         st.plotly_chart(fig2, use_container_width=True)
 
     # גרף 3 - הזנים עם הכי הרבה אצוות
@@ -585,7 +450,7 @@ elif page == "📊 ניתוח נתונים":
                       color='ממוצע ימים', color_continuous_scale='RdYlGn_r',
                       hover_data=['מספר אצוות'],
                       labels={'ממוצע ימים': 'ממוצע ימי הפרחה', 'זן': 'זן'})
-        fig3.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), xaxis=dict(gridcolor='#e8e8e8'), yaxis=dict(gridcolor='#e8e8e8'))
+        fig3.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right', xaxis=dict(gridcolor='#e8e8e8'), yaxis=dict(gridcolor='#e8e8e8'))
         st.plotly_chart(fig3, use_container_width=True)
 
     # טבלה נקייה
@@ -682,7 +547,7 @@ elif page == "📅 גאנט":
         today_str = datetime.today().strftime('%Y-%m-%d')
         fig.add_vline(x=today_str, line_dash="dash", line_color="red")
         fig.update_yaxes(categoryorder='category ascending')
-        fig.update_layout(height=550, xaxis_title="תאריך", yaxis_title="חממה", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), xaxis=dict(gridcolor='#e8e8e8'), yaxis=dict(gridcolor='#e8e8e8'))
+        fig.update_layout(height=550, xaxis_title="תאריך", yaxis_title="חממה", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right', xaxis=dict(gridcolor='#e8e8e8'), yaxis=dict(gridcolor='#e8e8e8'))
         st.plotly_chart(fig, use_container_width=True)
 
         st.markdown("---")
