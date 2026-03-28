@@ -184,7 +184,7 @@ if page == "📋 שיבוץ אצוות":
     tab1, tab2, tab3 = st.tabs(["➕ הוספת אצווה", "📋 אצוות קיימות", "🔄 עדכון/מחיקה"])
     
     with tab1:
-        st.subheader("➕ הוספת אצווה חדשה")
+        st.subheader("הוספת אצווה חדשה")
         col1, col2, col3 = st.columns(3)
         with col1:
             all_strains_list = sorted(df['זן'].unique().tolist())
@@ -248,7 +248,7 @@ if page == "📋 שיבוץ אצוות":
         
         # המלצת חממות
         st.markdown("---")
-        st.subheader("🏆 חממות מומלצות לזן זה")
+        st.subheader("חממות מומלצות לזן זה")
         rec_results = []
         for gh_opt in sorted(df["חממה"].unique()):
             hist_opt = df[(df["חממה"]==gh_opt)&(df["זן"]==new_strain)]
