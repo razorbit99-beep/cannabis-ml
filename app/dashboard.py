@@ -532,7 +532,7 @@ if page == "🏠 דשבורד":
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Flowering Days by Greenhouse" if lang_key == "en" else "ימי הפרחה לפי חממה")
-        fig = px.box(df, x='חממה', y='סה״כ ימים בהפרחה', color_discrete_sequence=['#a8c8e8','#b8ddb8','#f5c8a0','#d4a8b8','#c8c8e8','#f5e0a0','#a8d4d0','#e8c0b8','#c0d4a8','#d4c0e0'], color='חממה',
+        fig = px.box(df, x='חממה', y='סה״כ ימים בהפרחה', labels={'חממה': 'Greenhouse' if lang_key=='en' else 'חממה', 'סה״כ ימים בהפרחה': 'Flowering Days' if lang_key=='en' else 'סה״כ ימים בהפרחה'}, color_discrete_sequence=['#a8c8e8','#b8ddb8','#f5c8a0','#d4a8b8','#c8c8e8','#f5e0a0','#a8d4d0','#e8c0b8','#c0d4a8','#d4c0e0'], color='חממה',
                      title="Flowering Days Distribution by Greenhouse" if lang_key=="en" else "התפלגות ימי הפרחה לפי חממה")
         fig.update_layout(showlegend=False, height=350, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
         st.plotly_chart(fig, use_container_width=True)
@@ -548,7 +548,7 @@ if page == "🏠 דשבורד":
 
     if 'עונה' in df.columns:
         season_avg = df.groupby('עונה')['סה״כ ימים בהפרחה'].mean().reset_index()
-        fig3 = px.bar(season_avg, x='עונה', y='סה״כ ימים בהפרחה', color='עונה',
+        fig3 = px.bar(season_avg, x='עונה', y='סה״כ ימים בהפרחה', labels={'עונה': 'Season' if lang_key=='en' else 'עונה', 'סה״כ ימים בהפרחה': 'Flowering Days' if lang_key=='en' else 'סה״כ ימים בהפרחה'}, color='עונה',
                       title="Avg Flowering Days by Season" if lang_key=="en" else "ממוצע ימי הפרחה לפי עונה",
                       color_discrete_map={'חורף':'#a8c8e8','אביב':'#b8ddb8','קיץ':'#f5c8a0','סתיו':'#d4a8b8'})
         fig3.update_layout(showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
