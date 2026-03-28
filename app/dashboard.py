@@ -191,10 +191,9 @@ lang_key = "he" if lang == "עברית" else "en"
 T = TRANSLATIONS[lang_key]
 if lang_key == "en":
     st.markdown("""<style>
-    body { direction: ltr !important; }
-    .main { direction: ltr !important; }
     h1, h2, h3 { text-align: left !important; }
-    div[data-testid="stMarkdownContainer"] { text-align: left !important; }
+    .stMetric { direction: ltr !important; }
+    .stMetric label { text-align: left !important; }
     </style>""", unsafe_allow_html=True)
 
 col_logo, col_title = st.columns([1, 4])
@@ -205,8 +204,9 @@ with col_logo:
         st.write("🌿")
 with col_title:
     subtitle = "Flowering Management System" if lang_key=="en" else "מערכת ניהול וחיזוי הפרחה"
+    text_align = "left" if lang_key=="en" else "right"
     st.markdown(f"""
-    <div style="padding-top:15px">
+    <div style="padding-top:15px;text-align:{text_align}">
         <h2 style="color:#c8a951;margin:0;font-family:serif;">My Green Fields</h2>
         <p style="color:#a8d5a2;margin:0;font-size:14px;">{subtitle}</p>
     </div>
