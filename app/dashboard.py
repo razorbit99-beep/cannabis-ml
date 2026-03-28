@@ -547,7 +547,13 @@ if page == "🏠 דשבורד":
         st.plotly_chart(fig2, use_container_width=True)
 
     if 'עונה' in df.columns:
-        season_avg = df.groupby('עונה')['סה״כ ימים בהפרחה'].mean().reset_index()
+        if lang_key == 'en':
+            season_map = {'חורף': 'Winter', 'אביב': 'Spring', 'קיץ': 'Summer', 'סתיו': 'Fall'}
+            df_seasons = df.copy()
+            df_seasons['עונה'] = df_seasons['עונה'].map(season_map).fillna(df_seasons['עונה'])
+        else:
+            df_seasons = df
+        season_avg = df_seasons.groupby('עונה')['סה״כ ימים בהפרחה'].mean().reset_index()
         fig3 = px.bar(season_avg, x='עונה', y='סה״כ ימים בהפרחה', labels={'עונה': 'Season' if lang_key=='en' else 'עונה', 'סה״כ ימים בהפרחה': 'Flowering Days' if lang_key=='en' else 'סה״כ ימים בהפרחה'}, color='עונה',
                       title="Avg Flowering Days by Season" if lang_key=="en" else "ממוצע ימי הפרחה לפי עונה",
                       color_discrete_map={'חורף':'#a8c8e8','אביב':'#b8ddb8','קיץ':'#f5c8a0','סתיו':'#d4a8b8'})
