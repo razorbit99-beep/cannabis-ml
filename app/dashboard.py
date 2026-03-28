@@ -332,15 +332,20 @@ if page == "📋 שיבוץ אצוות":
                         use_container_width=True, hide_index=True)
     
     with tab3:
-        st.subheader("🔄 עדכון או מחיקת אצווה")
+        st.subheader("עדכון או מחיקת אצווה")
         batches_db = load_batches_db()
         if len(batches_db) > 0:
             batch_ids = batches_db['batch_id'].tolist()
-            selected_batch = st.selectbox("בחר אצווה", batch_ids)
+            search_text = st.text_input("חיפוש אצווה", placeholder="הקלד מספר אצווה...")
+            if search_text:
+                filtered_ids = [b for b in batch_ids if search_text.upper() in b.upper()]
+            else:
+                filtered_ids = batch_ids
+            selected_batch = st.selectbox("בחר אצווה", filtered_ids if filtered_ids else batch_ids)
             action = st.radio("פעולה", ["מחיקה", "עדכון תאריך סיום"])
             
             if action == "מחיקה":
-                if st.button("🗑️ מחק אצווה", type="primary"):
+                if st.button("מחק אצווה", type="primary"):
                     if supabase:
                         try:
                             supabase.table('batches').delete().eq('batch_id', selected_batch).execute()
