@@ -231,7 +231,17 @@ if page == "📋 שיבוץ אצוות":
             <b>חממה {row["חממה"]}{mark}</b> | {row["זמינות"]} | ניסיון: {row["ניסיון"]} | ממוצע: {row["ממוצע"]} ימים | ציון: {row["ציון"]}/100
             </div>''', unsafe_allow_html=True)
         st.markdown("---")
-        new_batch_id = st.text_input("מספר אצווה (אופציונלי)", value=f"NEW-{new_gh}-{new_date.strftime('%y%m%d')}")
+        week_num = new_date.isocalendar()[1]
+        year_2 = str(new_date.year)[2:]
+        strain_code = new_strain[:3].upper()
+        batches_now = load_batches_db()
+        existing = [b for b in (batches_now["batch_id"].tolist() if len(batches_now)>0 else []) 
+                   if f"Z{new_gh}" in str(b) and year_2 in str(b)]
+        next_num = len(existing) + 1
+        auto_batch_id = f"G{strain_code}{year_2}{week_num:02d}Z{new_gh}{next_num}"
+        st.info(f"מספר אצווה: **{auto_batch_id}**")
+        st.caption(f"G=חווה | {strain_code}=זן | {year_2}=שנה | {week_num:02d}=שבוע | Z{new_gh}=חממה | {next_num}=סידורי")
+        new_batch_id = st.text_input("שינוי ידני (אופציונלי)", value=auto_batch_id)
         
         if st.button("➕ שבץ אצווה", use_container_width=True):
             if supabase:
