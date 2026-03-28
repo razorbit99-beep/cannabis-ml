@@ -584,20 +584,27 @@ elif page == "📅 גאנט":
     filtered_gantt = df_valid[df_valid['חממה'].isin(selected_gh_gantt)]
     if selected_strain:
         filtered_gantt = filtered_gantt[filtered_gantt['זן'].isin(selected_strain)]
-    # אצוות מתוכננות תמיד מוצגות
-    if 'is_planned' in filtered_gantt.columns:
-        planned = filtered_gantt[filtered_gantt['is_planned']==True].dropna(subset=['תאריך תחילת הפרחה','תאריך סיום'])
-        historical = filtered_gantt[
-            (filtered_gantt['is_planned']!=True) & 
-            (filtered_gantt['תאריך תחילת הפרחה'].notna())
-        ].sort_values('תאריך תחילת הפרחה').tail(n_batches)
-        filtered_gantt = pd.concat([historical, planned]).drop_duplicates()
-    else:
-        filtered_gantt = filtered_gantt.dropna(subset=['תאריך תחילת הפרחה']).sort_values('תאריך תחילת הפרחה').tail(n_batches)
+    # ניקוי נתונים
+    filtered_gantt = filtered_gantt.dropna(subset=['תאריך תחילת הפרחה','תאריך סיום'])
 
-    show_future = st.checkbox("הצג אצוות עתידיות/מתוכננות", value=True)
-    if not show_future:
-        filtered_gantt = filtered_gantt[filtered_gantt['תאריך תחילת הפרחה'] <= pd.Timestamp.today()]
+    col_time1, col_time2 = st.columns(2)
+    with col_time1:
+        view_mode = st.radio("תצוגה", ["פעיל + עתידי", "הכל", "עבר בלבד"], horizontal=True)
+    with col_time2:
+        date_range = st.slider("טווח תאריכים (חודשים קדימה)", 1, 24, 12)
+    
+    today = pd.Timestamp.today()
+    future_end = today + pd.DateOffset(months=date_range)
+    
+    if view_mode == "פעיל + עתידי":
+        filtered_gantt = filtered_gantt[filtered_gantt['תאריך סיום'] >= today]
+    elif view_mode == "עבר בלבד":
+        filtered_gantt = filtered_gantt[filtered_gantt['תאריך סיום'] < today]
+    
+    # הגבלת טווח עתידי
+    if view_mode != "עבר בלבד":
+        filtered_gantt = filtered_gantt[filtered_gantt['תאריך תחילת הפרחה'] <= future_end]
+    
     st.markdown(f"**מציג {len(filtered_gantt)} אצוות**")
 
     # גאנט
