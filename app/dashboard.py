@@ -305,6 +305,11 @@ elif page == "📅 גאנט":
         line_dash="dash",
         line_color="red"
     )
+    # הגבלת ציר X עד היום + חודש
+    from datetime import timedelta
+    end_range = (datetime.today() + timedelta(days=30)).strftime('%Y-%m-%d')
+    start_range = (datetime.today() - timedelta(days=180)).strftime('%Y-%m-%d')
+    fig.update_xaxes(range=[start_range, end_range])
     st.plotly_chart(fig, use_container_width=True)
 
     # סטטיסטיקה
