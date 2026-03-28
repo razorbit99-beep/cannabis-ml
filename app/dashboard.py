@@ -106,7 +106,139 @@ if gb is not None:
 else:
     st.sidebar.warning("⚠️ מצב ממוצע היסטורי")
 
-page = st.sidebar.radio("ניווט", ["🏠 דשבורד", "🔮 חיזוי אצווה", "🏆 המלצת חממה", "📊 ניתוח נתונים", "📅 גאנט"])
+page = st.sidebar.radio("ניווט", ["🏠 דשבורד", "🔮 חיזוי אצווה", "🏆 המלצת חממה", "📋 שיבוץ אצוות", "📊 ניתוח נתונים", "📅 גאנט"])
+
+if page == "📋 שיבוץ אצוות":
+    st.title("📋 שיבוץ אצוות")
+    st.markdown("---")
+    
+    supabase = get_supabase()
+    
+    # טעינת אצוות מ-Supabase
+    @st.cache_data(ttl=30)
+    def load_batches_db():
+        if supabase:
+            try:
+                res = supabase.table('batches').select('*').order('start_date', desc=True).execute()
+                return pd.DataFrame(res.data)
+            except:
+                pass
+        return df[['מספר אצווה','זן','חממה','תאריך תחילת הפרחה','תאריך סיום הפרחה','סה״כ ימים בהפרחה']].rename(
+            columns={'מספר אצווה':'batch_id','זן':'strain','חממה':'greenhouse',
+                     'תאריך תחילת הפרחה':'start_date','תאריך סיום הפרחה':'end_date','סה״כ ימים בהפרחה':'total_days'})
+
+    tab1, tab2, tab3 = st.tabs(["➕ הוספת אצווה", "📋 אצוות קיימות", "🔄 עדכון/מחיקה"])
+    
+    with tab1:
+        st.subheader("➕ הוספת אצווה חדשה")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            new_strain = st.selectbox("זן", sorted(df['זן'].unique()), key='new_strain')
+        with col2:
+            new_gh = st.selectbox("חממה", sorted(df['חממה'].unique()), key='new_gh')
+        with col3:
+            new_date = st.date_input("תאריך כניסה", datetime.today(), key='new_date')
+        
+        # בדיקת זמינות
+        batches_db = load_batches_db()
+        if len(batches_db) > 0 and 'start_date' in batches_db.columns:
+            batches_db['start_date'] = pd.to_datetime(batches_db['start_date'], errors='coerce')
+            batches_db['end_date'] = pd.to_datetime(batches_db['end_date'], errors='coerce')
+            target_dt = pd.Timestamp(new_date)
+            active = batches_db[
+                (batches_db['greenhouse'] == new_gh) &
+                (batches_db['start_date'] <= target_dt) &
+                (batches_db['end_date'] >= target_dt)
+            ]
+            if len(active) > 0:
+                st.warning(f"⚠️ חממה {new_gh} תפוסה בתאריך זה! יש {len(active)} אצוות פעילות.")
+                st.markdown("**💡 חממות חלופיות פנויות:**")
+                for gh in sorted(df['חממה'].unique()):
+                    if gh == new_gh: continue
+                    busy = batches_db[
+                        (batches_db['greenhouse'] == gh) &
+                        (batches_db['start_date'] <= target_dt) &
+                        (batches_db['end_date'] >= target_dt)
+                    ]
+                    if len(busy) == 0:
+                        hist = df[(df['חממה']==gh)&(df['זן']==new_strain)]
+                        exp = f" | {len(hist)} אצוות עם הזן" if len(hist)>0 else " | אין ניסיון עם הזן"
+                        st.success(f"✅ חממה {gh} פנויה{exp}")
+            else:
+                st.success(f"✅ חממה {new_gh} פנויה בתאריך זה!")
+        
+        # חיזוי ימי הפרחה
+        hist_match = df[(df['חממה']==new_gh)&(df['זן']==new_strain)]['סה״כ ימים בהפרחה']
+        predicted_days = round(hist_match.mean() if len(hist_match)>0 else df['סה״כ ימים בהפרחה'].mean(), 1)
+        end_date_pred = datetime.combine(new_date, datetime.min.time()) + timedelta(days=predicted_days)
+        
+        st.info(f"⏱️ חיזוי: {predicted_days} ימי הפרחה | תאריך קציר משוער: {end_date_pred.strftime('%d/%m/%Y')}")
+        
+        new_batch_id = st.text_input("מספר אצווה (אופציונלי)", value=f"NEW-{new_gh}-{new_date.strftime('%y%m%d')}")
+        
+        if st.button("➕ שבץ אצווה", use_container_width=True):
+            if supabase:
+                try:
+                    record = {
+                        'batch_id': new_batch_id,
+                        'strain': new_strain,
+                        'greenhouse': new_gh,
+                        'start_date': str(new_date),
+                        'end_date': str(end_date_pred.date()),
+                        'total_days': predicted_days,
+                        'season': get_season(new_date.month),
+                        'is_planned': True
+                    }
+                    supabase.table('batches').upsert(record, on_conflict='batch_id').execute()
+                    st.success(f"✅ האצווה שובצה בהצלחה! חממה {new_gh} | {new_date} → {end_date_pred.strftime('%d/%m/%Y')}")
+                    st.cache_data.clear()
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"שגיאה: {e}")
+            else:
+                st.error("אין חיבור למסד נתונים")
+    
+    with tab2:
+        st.subheader("📋 כל האצוות")
+        batches_db = load_batches_db()
+        if len(batches_db) > 0:
+            show_planned = st.checkbox("הצג רק מתוכננות", value=False)
+            if show_planned and 'is_planned' in batches_db.columns:
+                display = batches_db[batches_db['is_planned']==True]
+            else:
+                display = batches_db
+            st.dataframe(display[['batch_id','strain','greenhouse','start_date','end_date','total_days']].head(50),
+                        use_container_width=True, hide_index=True)
+    
+    with tab3:
+        st.subheader("🔄 עדכון או מחיקת אצווה")
+        batches_db = load_batches_db()
+        if len(batches_db) > 0:
+            batch_ids = batches_db['batch_id'].tolist()
+            selected_batch = st.selectbox("בחר אצווה", batch_ids)
+            action = st.radio("פעולה", ["מחיקה", "עדכון תאריך סיום"])
+            
+            if action == "מחיקה":
+                if st.button("🗑️ מחק אצווה", type="primary"):
+                    if supabase:
+                        try:
+                            supabase.table('batches').delete().eq('batch_id', selected_batch).execute()
+                            st.success(f"✅ האצווה {selected_batch} נמחקה!")
+                            st.cache_data.clear()
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"שגיאה: {e}")
+            else:
+                new_end = st.date_input("תאריך סיום חדש", datetime.today())
+                if st.button("✏️ עדכן", type="primary"):
+                    if supabase:
+                        try:
+                            supabase.table('batches').update({'end_date': str(new_end)}).eq('batch_id', selected_batch).execute()
+                            st.success(f"✅ עודכן!")
+                            st.cache_data.clear()
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"שגיאה: {e}")
 
 if page == "🏆 המלצת חממה":
     st.title("🏆 המלצת חממה חכמה")
