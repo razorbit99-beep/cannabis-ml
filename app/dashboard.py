@@ -242,11 +242,76 @@ elif page == "📅 גאנט":
 
     df['תאריך תחילת הפרחה'] = pd.to_datetime(df['תאריך תחילת הפרחה'], errors='coerce')
     df['תאריך סיום'] = df['תאריך תחילת הפרחה'] + pd.to_timedelta(df['סה״כ ימים בהפרחה'], unit='D')
-    df_gantt = df.dropna(subset=['תאריך תחילת הפרחה','תאריך סיום']).tail(60)
+    df_valid = df.dropna(subset=['תאריך תחילת הפרחה','תאריך סיום'])
 
-    fig = px.timeline(df_gantt, x_start='תאריך תחילת הפרחה', x_end='תאריך סיום',
-                      y='חממה', color='זן', title="גאנט אצוות אחרונות",
-                      hover_data=['מספר אצווה','סה״כ ימים בהפרחה'])
+    # פילטרים
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        all_gh = sorted(df_valid['חממה'].unique())
+        selected_gh_gantt = st.multiselect("סנן לפי חממה", all_gh, default=all_gh)
+    with col2:
+        all_strains = sorted(df_valid['זן'].unique())
+        selected_strain = st.multiselect("סנן לפי זן", all_strains, default=[])
+    with col3:
+        n_batches = st.slider("מספר אצוות להצגה", 10, 100, 50)
+
+    # פילטור
+    filtered_gantt = df_valid[df_valid['חממה'].isin(selected_gh_gantt)]
+    if selected_strain:
+        filtered_gantt = filtered_gantt[filtered_gantt['זן'].isin(selected_strain)]
+    filtered_gantt = filtered_gantt.tail(n_batches)
+
+    st.markdown(f"**מציג {len(filtered_gantt)} אצוות**")
+
+    # גאנט
+    fig = px.timeline(
+        filtered_gantt,
+        x_start='תאריך תחילת הפרחה',
+        x_end='תאריך סיום',
+        y='חממה',
+        color='זן',
+        title="גאנט אצוות הפרחה",
+        hover_data={
+            'מספר אצווה': True,
+            'זן': True,
+            'חממה': True,
+            'סה״כ ימים בהפרחה': ':.1f',
+            'תאריך תחילת הפרחה': True,
+            'תאריך סיום': True
+        },
+        labels={
+            'תאריך תחילת הפרחה': 'תאריך כניסה',
+            'תאריך סיום': 'תאריך קציר',
+            'סה״כ ימים בהפרחה': 'ימי הפרחה'
+        }
+    )
     fig.update_yaxes(categoryorder='category ascending')
-    fig.update_layout(height=500)
+    fig.update_layout(
+        height=550,
+        xaxis_title="תאריך",
+        yaxis_title="חממה",
+        legend_title="זן",
+        hoverlabel=dict(bgcolor="white", font_size=13)
+    )
+    # קו אנכי - היום
+    fig.add_vline(
+        x=datetime.today(),
+        line_dash="dash",
+        line_color="red",
+        annotation_text="היום",
+        annotation_position="top"
+    )
     st.plotly_chart(fig, use_container_width=True)
+
+    # סטטיסטיקה
+    st.markdown("---")
+    st.subheader("📊 סיכום גאנט")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        active = filtered_gantt[filtered_gantt['תאריך סיום'] >= datetime.today()]
+        st.metric("אצוות פעילות", len(active))
+    with col2:
+        completed = filtered_gantt[filtered_gantt['תאריך סיום'] < datetime.today()]
+        st.metric("אצוות שהסתיימו", len(completed))
+    with col3:
+        st.metric("ממוצע ימי הפרחה", f"{filtered_gantt['סה״כ ימים בהפרחה'].mean():.1f}")
