@@ -445,7 +445,7 @@ if page == "🏆 המלצת חממה":
                      title=f"ציון התאמה לפי חממה - זן {strain_rec}",
                      text='ציון התאמה')
         fig.update_traces(textposition='outside')
-        fig.update_layout(coloraxis_showscale=False, yaxis_range=[0, 105], paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'))
+        fig.update_layout(coloraxis_showscale=False, yaxis_range=[0, 105], paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
         st.plotly_chart(fig, use_container_width=True)
 
         # טבלה מפורטת
@@ -469,7 +469,7 @@ if page == "🏠 דשבורד":
         st.subheader("ימי הפרחה לפי חממה")
         fig = px.box(df, x='חממה', y='סה״כ ימים בהפרחה', color_discrete_sequence=['#a8c8e8','#b8ddb8','#f5c8a0','#d4a8b8','#c8c8e8','#f5e0a0','#a8d4d0','#e8c0b8','#c0d4a8','#d4c0e0'], color='חממה',
                      title="התפלגות ימי הפרחה לפי חממה")
-        fig.update_layout(showlegend=False, height=350, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'))
+        fig.update_layout(showlegend=False, height=350, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
         st.plotly_chart(fig, use_container_width=True)
 
     with col2:
@@ -486,7 +486,7 @@ if page == "🏠 דשבורד":
         fig3 = px.bar(season_avg, x='עונה', y='סה״כ ימים בהפרחה', color='עונה',
                       title="ממוצע ימי הפרחה לפי עונה",
                       color_discrete_map={'חורף':'#a8c8e8','אביב':'#b8ddb8','קיץ':'#f5c8a0','סתיו':'#d4a8b8'})
-        fig3.update_layout(showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'))
+        fig3.update_layout(showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
         st.plotly_chart(fig3, use_container_width=True)
 
 elif page == "🔮 חיזוי אצווה":
@@ -550,7 +550,7 @@ elif page == "📊 ניתוח נתונים":
                   title="ממוצע ימי הפרחה לפי חודש כניסה",
                   color='סה״כ ימים בהפרחה', color_continuous_scale='RdYlGn_r',
                   labels={'סה״כ ימים בהפרחה': 'ממוצע ימי הפרחה', 'חודש': 'חודש כניסה להפרחה'})
-    fig1.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'))
+    fig1.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
     st.plotly_chart(fig1, use_container_width=True)
 
     col1, col2 = st.columns(2)
@@ -565,7 +565,7 @@ elif page == "📊 ניתוח נתונים":
                       color='ממוצע ימים', color_continuous_scale='RdYlGn_r',
                       hover_data=['מספר אצוות'],
                       labels={'ממוצע ימים': 'ממוצע ימי הפרחה', 'חממה': 'חממה'})
-        fig2.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'))
+        fig2.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
         st.plotly_chart(fig2, use_container_width=True)
 
     # גרף 3 - הזנים עם הכי הרבה אצוות
@@ -578,7 +578,7 @@ elif page == "📊 ניתוח נתונים":
                       color='ממוצע ימים', color_continuous_scale='RdYlGn_r',
                       hover_data=['מספר אצוות'],
                       labels={'ממוצע ימים': 'ממוצע ימי הפרחה', 'זן': 'זן'})
-        fig3.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'))
+        fig3.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
         st.plotly_chart(fig3, use_container_width=True)
 
     # טבלה נקייה
@@ -675,7 +675,7 @@ elif page == "📅 גאנט":
         today_str = datetime.today().strftime('%Y-%m-%d')
         fig.add_vline(x=today_str, line_dash="dash", line_color="red")
         fig.update_yaxes(categoryorder='category ascending')
-        fig.update_layout(height=550, xaxis_title="תאריך", yaxis_title="חממה", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'))
+        fig.update_layout(height=550, xaxis_title="תאריך", yaxis_title="חממה", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
         st.plotly_chart(fig, use_container_width=True)
 
         st.markdown("---")
