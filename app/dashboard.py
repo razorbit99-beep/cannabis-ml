@@ -586,11 +586,14 @@ elif page == "📅 גאנט":
         filtered_gantt = filtered_gantt[filtered_gantt['זן'].isin(selected_strain)]
     # אצוות מתוכננות תמיד מוצגות
     if 'is_planned' in filtered_gantt.columns:
-        planned = filtered_gantt[filtered_gantt['is_planned']==True]
-        historical = filtered_gantt[filtered_gantt['is_planned']!=True].sort_values('תאריך תחילת הפרחה').tail(n_batches)
+        planned = filtered_gantt[filtered_gantt['is_planned']==True].dropna(subset=['תאריך תחילת הפרחה','תאריך סיום'])
+        historical = filtered_gantt[
+            (filtered_gantt['is_planned']!=True) & 
+            (filtered_gantt['תאריך תחילת הפרחה'].notna())
+        ].sort_values('תאריך תחילת הפרחה').tail(n_batches)
         filtered_gantt = pd.concat([historical, planned]).drop_duplicates()
     else:
-        filtered_gantt = filtered_gantt.sort_values('תאריך תחילת הפרחה').tail(n_batches)
+        filtered_gantt = filtered_gantt.dropna(subset=['תאריך תחילת הפרחה']).sort_values('תאריך תחילת הפרחה').tail(n_batches)
 
     show_future = st.checkbox("הצג אצוות עתידיות/מתוכננות", value=True)
     if not show_future:
