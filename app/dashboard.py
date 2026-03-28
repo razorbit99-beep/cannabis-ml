@@ -453,8 +453,6 @@ if page == "🏆 המלצת חממה":
         st.dataframe(results_df, use_container_width=True, hide_index=True)
 
 if page == "🏠 דשבורד":
-    st.markdown("---")
-
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric("סה״כ אצוות", len(df), "היסטוריה")
