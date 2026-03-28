@@ -467,7 +467,7 @@ if page == "🏠 דשבורד":
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("📊 ימי הפרחה לפי חממה")
-        fig = px.box(df, x='חממה', y='סה״כ ימים בהפרחה', color='חממה',
+        fig = px.box(df, x='חממה', y='סה״כ ימים בהפרחה', color_discrete_sequence=['#a8c8e8','#b8ddb8','#f5c8a0','#d4a8b8','#c8c8e8','#f5e0a0','#a8d4d0','#e8c0b8','#c0d4a8','#d4c0e0'], color='חממה',
                      title="התפלגות ימי הפרחה לפי חממה")
         fig.update_layout(showlegend=False, height=350, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), xaxis=dict(gridcolor='#e8e8e8'), yaxis=dict(gridcolor='#e8e8e8'))
         st.plotly_chart(fig, use_container_width=True)
@@ -477,7 +477,7 @@ if page == "🏠 דשבורד":
         top_strains = df['זן'].value_counts().head(10)
         fig2 = px.bar(x=top_strains.values, y=top_strains.index, orientation='h',
                       title="10 זנים נפוצים", color=top_strains.values,
-                      color_continuous_scale='Greens',
+                      color_continuous_scale=['#d4edd4','#74b474'],
                       labels={'x': 'מספר אצוות', 'y': 'זן'})
         fig2.update_layout(
             height=350, coloraxis_showscale=False, showlegend=False,
@@ -492,7 +492,7 @@ if page == "🏠 דשבורד":
         season_avg = df.groupby('עונה')['סה״כ ימים בהפרחה'].mean().reset_index()
         fig3 = px.bar(season_avg, x='עונה', y='סה״כ ימים בהפרחה', color='עונה', color_discrete_sequence=['#2d6a4f','#c8a951','#e76f51','#a8dadc'],
                       title="ממוצע ימי הפרחה לפי עונה",
-                      color_discrete_map={'חורף':'#2d6a4f','אביב':'#c8a951','קיץ':'#e76f51','סתיו':'#40916c'})
+                      color_discrete_map={'חורף':'#a8c8e8','אביב':'#b8ddb8','קיץ':'#f5c8a0','סתיו':'#d4a8b8'})
         fig3.update_layout(showlegend=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), xaxis=dict(gridcolor='#e8e8e8'), yaxis=dict(gridcolor='#e8e8e8'))
         st.plotly_chart(fig3, use_container_width=True)
 
