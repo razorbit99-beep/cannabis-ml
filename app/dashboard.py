@@ -31,41 +31,46 @@ st.markdown("""
 <style>
     body { direction: rtl; }
     .main { direction: rtl; }
-    .stApp { background-color: #1a1a2e; }
-    h1, h2, h3 { text-align: right; color: #ffffff; }
-    p, label, div { color: #e0e0e0; }
+    .stApp { background-color: #f8f9fa; }
+    h1, h2, h3 { text-align: right; color: #1a3a1e; }
     .stMetric { direction: rtl; }
-    .stMetric label { color: #c8a951 !important; }
+    .stMetric label { color: #2d6a4f !important; }
     .stMetric [data-testid="metric-container"] { 
-        background: #16213e; 
+        background: #ffffff;
         border: 1px solid #c8a951;
         border-radius: 10px;
         padding: 10px;
+        box-shadow: 0 2px 8px rgba(200,169,81,0.15);
     }
-    .stMetric [data-testid="metric-container"] * { color: #ffffff; }
-    [data-testid="stSidebar"] { background-color: #0f1923; border-right: 2px solid #c8a951; }
+    [data-testid="stSidebar"] { 
+        background-color: #1a3a1e;
+    }
     [data-testid="stSidebar"] * { color: #ffffff; }
+    [data-testid="stSidebar"] .stRadio label { color: #ffffff !important; }
     .stButton > button {
-        background: linear-gradient(135deg, #c8a951, #a0822e);
-        color: #0f1923;
+        background: linear-gradient(135deg, #2d6a4f, #1a3a1e);
+        color: white;
         border: none;
         border-radius: 8px;
         font-weight: bold;
+        padding: 8px 20px;
     }
     .stButton > button:hover {
-        background: linear-gradient(135deg, #e0c070, #c8a951);
+        background: linear-gradient(135deg, #40916c, #2d6a4f);
+        box-shadow: 0 4px 12px rgba(45,106,79,0.3);
     }
-    div[data-testid="stMarkdownContainer"] { color: #e0e0e0; }
-    .stSelectbox label { color: #c8a951 !important; }
-    .stMultiSelect label { color: #c8a951 !important; }
-    .stRadio label { color: #c8a951 !important; }
-    .stSlider label { color: #c8a951 !important; }
-    .stTextInput label { color: #c8a951 !important; }
-    .stDateInput label { color: #c8a951 !important; }
-    .stCheckbox label { color: #c8a951 !important; }
+    .stSelectbox label { color: #2d6a4f !important; font-weight: 500; }
+    .stMultiSelect label { color: #2d6a4f !important; font-weight: 500; }
+    .stRadio label { color: #2d6a4f !important; font-weight: 500; }
+    .stSlider label { color: #2d6a4f !important; font-weight: 500; }
+    .stTextInput label { color: #2d6a4f !important; font-weight: 500; }
+    .stDateInput label { color: #2d6a4f !important; font-weight: 500; }
+    .stCheckbox label { color: #2d6a4f !important; }
     .stDataFrame { border: 1px solid #c8a951; border-radius: 8px; }
     .stAlert { border-radius: 8px; }
-    hr { border-color: #c8a951; }
+    hr { border-color: #c8a951; opacity: 0.5; }
+    .stInfo { background: #e8f5e9; border-left: 4px solid #2d6a4f; }
+    .stSuccess { background: #e8f5e9; border-left: 4px solid #2d6a4f; }
 </style>
 """, unsafe_allow_html=True)
 
