@@ -592,6 +592,9 @@ elif page == "📅 גאנט":
     else:
         filtered_gantt = filtered_gantt.tail(n_batches)
 
+    show_future = st.checkbox("הצג אצוות עתידיות/מתוכננות", value=True)
+    if not show_future:
+        filtered_gantt = filtered_gantt[filtered_gantt['תאריך תחילת הפרחה'] <= pd.Timestamp.today()]
     st.markdown(f"**מציג {len(filtered_gantt)} אצוות**")
 
     # גאנט
