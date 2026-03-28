@@ -76,20 +76,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # לוגו וכותרת
-col_logo, col_title = st.columns([1, 4])
-with col_logo:
-    try:
-        st.image('app/logo_white.png', width=120)
-    except:
-        st.write("🌿")
-with col_title:
-    subtitle = "Flowering Management System" if lang_key=="en" else "מערכת ניהול וחיזוי הפרחה"
-    st.markdown(f"""
-    <div style="padding-top:15px">
-        <h2 style="color:#c8a951;margin:0;font-family:serif;">My Green Fields</h2>
-        <p style="color:#a8d5a2;margin:0;font-size:14px;">{subtitle}</p>
-    </div>
-    """, unsafe_allow_html=True)
+
 st.markdown("<hr style='border-color:#2d6a4f;margin:10px 0 20px 0'>", unsafe_allow_html=True)
 
 def find_file(filename, folders=['app', 'models', '.']):
@@ -202,6 +189,21 @@ with col_en:
 lang = "עברית" if st.session_state.lang == "he" else "English"
 lang_key = "he" if lang == "עברית" else "en"
 T = TRANSLATIONS[lang_key]
+
+col_logo, col_title = st.columns([1, 4])
+with col_logo:
+    try:
+        st.image('app/logo_white.png', width=120)
+    except:
+        st.write("🌿")
+with col_title:
+    subtitle = "Flowering Management System" if lang_key=="en" else "מערכת ניהול וחיזוי הפרחה"
+    st.markdown(f"""
+    <div style="padding-top:15px">
+        <h2 style="color:#c8a951;margin:0;font-family:serif;">My Green Fields</h2>
+        <p style="color:#a8d5a2;margin:0;font-size:14px;">{subtitle}</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.sidebar.title("🌿 " + T["title"])
 st.sidebar.markdown("---")
