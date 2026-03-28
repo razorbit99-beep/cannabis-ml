@@ -339,9 +339,12 @@ if page == "📋 שיבוץ אצוות":
             search_text = st.text_input("חיפוש אצווה", placeholder="הקלד מספר אצווה...")
             if search_text:
                 filtered_ids = [b for b in batch_ids if search_text.upper() in b.upper()]
+                if not filtered_ids:
+                    st.warning("לא נמצאו אצוות")
+                    filtered_ids = batch_ids
             else:
                 filtered_ids = batch_ids
-            selected_batch = st.selectbox("בחר אצווה", filtered_ids if filtered_ids else batch_ids)
+            selected_batch = st.selectbox("", filtered_ids, label_visibility="collapsed")
             action = st.radio("פעולה", ["מחיקה", "עדכון תאריך סיום"])
             
             if action == "מחיקה":
