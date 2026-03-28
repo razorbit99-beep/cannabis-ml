@@ -294,12 +294,11 @@ elif page == "📅 גאנט":
         hoverlabel=dict(bgcolor="white", font_size=13)
     )
     # קו אנכי - היום
+    today_str = datetime.today().strftime('%Y-%m-%d')
     fig.add_vline(
-        x=datetime.today(),
+        x=today_str,
         line_dash="dash",
-        line_color="red",
-        annotation_text="היום",
-        annotation_position="top"
+        line_color="red"
     )
     st.plotly_chart(fig, use_container_width=True)
 
