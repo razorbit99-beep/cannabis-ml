@@ -104,10 +104,10 @@ def load_models():
         return None, None, None
 
 def get_season(month):
-    if month in [12, 1, 2]: return 'חורף'
-    if month in [3, 4, 5]: return 'אביב'
-    if month in [6, 7, 8]: return 'קיץ'
-    return 'סתיו'
+    if month in [12, 1, 2]: return 'Winter' if lang_key=='en' else 'חורף'
+    if month in [3, 4, 5]: return 'Spring' if lang_key=='en' else 'אביב'
+    if month in [6, 7, 8]: return 'Summer' if lang_key=='en' else 'קיץ'
+    return 'Fall' if lang_key=='en' else 'סתיו'
 
 def predict_ml(model, feature_cols, mapping, df, greenhouse, strain, start_date):
     season = get_season(start_date.month)
