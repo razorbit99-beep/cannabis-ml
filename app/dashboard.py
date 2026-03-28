@@ -552,7 +552,7 @@ elif page == "📊 ניתוח נתונים":
     monthly['חודש'] = monthly['חודש_התחלה'].map(month_names)
     fig1 = px.bar(monthly, x='חודש', y='סה״כ ימים בהפרחה',
                   title="ממוצע ימי הפרחה לפי חודש כניסה",
-                  color='סה״כ ימים בהפרחה', color_continuous_scale=['#b8ddb8','#f5e6a0','#f5c0b8'],
+                  color='סה״כ ימים בהפרחה', color_continuous_scale=['#2d6a4f','#c8a951','#c0392b'],
                   labels={'סה״כ ימים בהפרחה': 'ממוצע ימי הפרחה', 'חודש': 'חודש כניסה להפרחה'})
     fig1.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
     st.plotly_chart(fig1, use_container_width=True)
@@ -566,7 +566,7 @@ elif page == "📊 ניתוח נתונים":
         gh_perf = gh_perf.sort_values('ממוצע ימים')
         fig2 = px.bar(gh_perf, x='חממה', y='ממוצע ימים',
                       title="ממוצע ימי הפרחה לפי חממה",
-                      color='ממוצע ימים', color_continuous_scale=['#b8ddb8','#f5e6a0','#f5c0b8'],
+                      color='ממוצע ימים', color_continuous_scale=['#2d6a4f','#c8a951','#c0392b'],
                       hover_data=['מספר אצוות'],
                       labels={'ממוצע ימים': 'ממוצע ימי הפרחה', 'חממה': 'חממה'})
         fig2.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
@@ -579,7 +579,7 @@ elif page == "📊 ניתוח נתונים":
         strain_perf = strain_perf[strain_perf['מספר אצוות'] >= 3].sort_values('ממוצע ימים')
         fig3 = px.bar(strain_perf, x='זן', y='ממוצע ימים',
                       title="ממוצע ימי הפרחה לפי זן (מינימום 3 אצוות)",
-                      color='ממוצע ימים', color_continuous_scale=['#b8ddb8','#f5e6a0','#f5c0b8'],
+                      color='ממוצע ימים', color_continuous_scale=['#2d6a4f','#c8a951','#c0392b'],
                       hover_data=['מספר אצוות'],
                       labels={'ממוצע ימים': 'ממוצע ימי הפרחה', 'זן': 'זן'})
         fig3.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
