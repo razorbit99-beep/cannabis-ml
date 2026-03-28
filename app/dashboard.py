@@ -678,7 +678,8 @@ elif page == "📅 גאנט":
             color_discrete_sequence=['#a8c8e8','#b8ddb8','#f5c8a0','#d4a8b8','#c8c8e8','#f5e0a0','#a8d4d0','#e8c0b8','#c0d4a8','#d4c0e0']
         )
         today_str = datetime.today().strftime('%Y-%m-%d')
-        fig.add_vline(x=today_str, line_dash="dash", line_color="red")
+        fig.add_vline(x=today_str, line_dash="dash", line_color="#2d6a4f", line_width=1.5)
+        fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right', margin=dict(l=10,r=10,t=40,b=10))
         fig.update_yaxes(categoryorder='category ascending')
         fig.update_layout(height=550, xaxis_title="תאריך", yaxis_title="חממה", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=1.0, title_xanchor='right')
         st.plotly_chart(fig, use_container_width=True)
