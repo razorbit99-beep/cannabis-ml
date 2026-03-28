@@ -208,7 +208,16 @@ if gb is not None:
 else:
     st.sidebar.warning(T["ml_inactive"])
 
-page = st.sidebar.radio(T["nav"], T["pages"])
+page_display = st.sidebar.radio(T["nav"], T["pages"])
+# המר לעברית לצורך הלוגיקה
+en_to_he = {
+    "🏠 Dashboard": "🏠 דשבורד",
+    "🔮 Batch Prediction": "🔮 חיזוי אצווה",
+    "📋 Batch Assignment": "📋 שיבוץ אצוות",
+    "📊 Data Analysis": "📊 ניתוח נתונים",
+    "📅 Gantt": "📅 גאנט"
+}
+page = en_to_he.get(page_display, page_display)
 
 if page == "📋 שיבוץ אצוות":
     st.subheader("שיבוץ אצוות")
