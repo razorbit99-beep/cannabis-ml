@@ -257,7 +257,7 @@ if page == "📋 שיבוץ אצוות":
         col1, col2, col3 = st.columns(3)
         with col1:
             all_strains_list = sorted(df['זן'].unique().tolist())
-            strain_search = st.text_input("🔍 חיפוש זן", placeholder="הקלד שם זן...")
+            strain_search = st.text_input("🔍 חיפוש זן", placeholder="Type strain name..." if lang_key=="en" else "הקלד שם זן...")
             if strain_search:
                 filtered_strains = [s for s in all_strains_list if strain_search.upper() in s.upper()]
             else:
@@ -306,7 +306,7 @@ if page == "📋 שיבוץ אצוות":
                         exp = f" | {len(hist)} אצוות עם הזן" if len(hist)>0 else " | אין ניסיון עם הזן"
                         st.success(f"✅ חממה {gh} פנויה{exp}")
             else:
-                st.success(f"✅ חממה {new_gh} פנויה בתאריך זה!")
+                st.success(f"✅ Greenhouse {new_gh} available on this date!" if lang_key=="en" else f"✅ חממה {new_gh} פנויה בתאריך זה!")
         
         # חיזוי ימי הפרחה
         hist_match = df[(df['חממה']==new_gh)&(df['זן']==new_strain)]['סה״כ ימים בהפרחה']
