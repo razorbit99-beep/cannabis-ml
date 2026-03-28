@@ -589,21 +589,22 @@ elif page == "📅 גאנט":
 
     col_time1, col_time2 = st.columns(2)
     with col_time1:
-        view_mode = st.radio("תצוגה", ["פעיל + עתידי", "הכל", "עבר בלבד"], horizontal=True)
+        view_mode = st.radio("תצוגה", ["הכל", "פעיל + עתידי", "עבר בלבד"], horizontal=True)
     with col_time2:
-        date_range = st.slider("טווח תאריכים (חודשים קדימה)", 1, 24, 12)
+        date_range = st.slider("חודשים קדימה להצגה", 1, 24, 12)
     
     today = pd.Timestamp.today()
     future_end = today + pd.DateOffset(months=date_range)
+    past_start = today - pd.DateOffset(months=18)
     
     if view_mode == "פעיל + עתידי":
-        filtered_gantt = filtered_gantt[filtered_gantt['תאריך סיום'] >= today]
+        filtered_gantt = filtered_gantt[
+            (filtered_gantt['תאריך סיום'] >= today) | 
+            (filtered_gantt['תאריך תחילת הפרחה'] >= today)
+        ]
     elif view_mode == "עבר בלבד":
-        filtered_gantt = filtered_gantt[filtered_gantt['תאריך סיום'] < today]
-    
-    # הגבלת טווח עתידי
-    if view_mode != "עבר בלבד":
-        filtered_gantt = filtered_gantt[filtered_gantt['תאריך תחילת הפרחה'] <= future_end]
+        filtered_gantt = filtered_gantt[filtered_gantt['תאריך תחילת הפרחה'] < today]
+        filtered_gantt = filtered_gantt[filtered_gantt['תאריך תחילת הפרחה'] >= past_start]
     
     st.markdown(f"**מציג {len(filtered_gantt)} אצוות**")
 
