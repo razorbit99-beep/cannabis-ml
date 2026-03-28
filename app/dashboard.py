@@ -319,9 +319,9 @@ if page == "📋 שיבוץ אצוות":
         st.markdown("---")
         st.subheader("Recommended Greenhouses" if lang_key=="en" else "חממות מומלצות לזן זה")
         rec_results = []
-        for gh_opt in sorted(df["Greenhouse" if lang_key=="en" else "חממה"].unique()):
-            hist_opt = df[(df["Greenhouse" if lang_key=="en" else "חממה"]==gh_opt)&(df["זן"]==new_strain)]
-            all_gh_opt = df[df["Greenhouse" if lang_key=="en" else "חממה"]==gh_opt]
+        for gh_opt in sorted(df["חממה"].unique()):
+            hist_opt = df[(df["חממה"]==gh_opt)&(df["זן"]==new_strain)]
+            all_gh_opt = df[df["חממה"]==gh_opt]
             n = len(hist_opt)
             target_col = [c for c in df.columns if "ימים" in c][0]
             avg = hist_opt[target_col].mean() if n>0 else all_gh_opt[target_col].mean()
@@ -345,13 +345,13 @@ if page == "📋 שיבוץ אצוות":
                 avail_score = 30
                 avail_txt = "✅ פנויה"
             total = round(exp_score + stab_score + avail_score)
-            rec_results.append({"Greenhouse" if lang_key=="en" else "חממה":gh_opt,"ניסיון":n,"ממוצע":round(avg,1),"זמינות":avail_txt,"ציון":total})
+            rec_results.append({"חממה":gh_opt,"ניסיון":n,"ממוצע":round(avg,1),"זמינות":avail_txt,"ציון":total})
         rec_df = pd.DataFrame(rec_results).sort_values("ציון", ascending=False)
         for _, row in rec_df.head(5).iterrows():
             color = "#b8ddb8" if row["ציון"]>=70 else "#f5e6a0" if row["ציון"]>=40 else "#f5c0b8"
-            mark = " ← נבחרה" if row["Greenhouse" if lang_key=="en" else "חממה"]==new_gh else ""
+            mark = " ← נבחרה" if row["חממה"]==new_gh else ""
             st.markdown(f'''<div style="background:{color};padding:8px 15px;border-radius:8px;color:#1a3a1e;margin:4px 0;font-size:0.9em;">
-            <b>חממה {row["Greenhouse" if lang_key=="en" else "חממה"]}{mark}</b> | {row["זמינות"]} | ניסיון: {row["ניסיון"]} | ממוצע: {row["ממוצע"]} ימים | ציון: {row["ציון"]}/100
+            <b>{"Greenhouse" if lang_key=="en" else "חממה"} {row["חממה"]}{mark}</b> | {row["זמינות"]} | ניסיון: {row["ניסיון"]} | ממוצע: {row["ממוצע"]} ימים | ציון: {row["ציון"]}/100
             </div>''', unsafe_allow_html=True)
         st.markdown("---")
         week_num = new_date.isocalendar()[1]
