@@ -677,13 +677,19 @@ elif page == "📊 ניתוח נתונים":
         st.plotly_chart(fig3, use_container_width=True)
 
     # טבלה נקייה
-    st.subheader("Data Table" if lang_key=="en" else "טבלת נתונים")
+    if lang_key=="en":
+    st.markdown('<h3 style="text-align:left">Data Table</h3>', unsafe_allow_html=True)
+else:
+    st.subheader("טבלת נתונים")
     cols_show = ['מספר אצווה','זן','חממה','תאריך תחילת הפרחה','סה״כ ימים בהפרחה']
     if 'עונה' in filtered.columns:
         cols_show.append('עונה')
     display_df = filtered[cols_show].copy()
     display_df['סה״כ ימים בהפרחה'] = display_df['סה״כ ימים בהפרחה'].round(1)
-    display_df.columns = ['מספר אצווה','זן','חממה','תאריך התחלה','ימי הפרחה'] + (['עונה'] if 'עונה' in filtered.columns else [])
+    if lang_key=='en':
+        display_df.columns = ['Batch ID','Strain','Greenhouse','Start Date','Flowering Days'] + (['Season'] if 'עונה' in filtered.columns else [])
+    else:
+        display_df.columns = ['מספר אצווה','זן','חממה','תאריך התחלה','ימי הפרחה'] + (['עונה'] if 'עונה' in filtered.columns else [])
     st.dataframe(display_df, use_container_width=True, hide_index=True)
 
 elif page == "📅 גאנט":
