@@ -699,7 +699,10 @@ elif page == "📊 ניתוח נתונים":
     st.dataframe(display_df, use_container_width=True, hide_index=True)
 
 elif page == "📅 גאנט":
-    st.subheader("Flowering Gantt" if lang_key=="en" else "גאנט הפרחה")
+    if lang_key=="en":
+    st.markdown('<h3 style="text-align:left">Flowering Gantt</h3>', unsafe_allow_html=True)
+else:
+    st.subheader("גאנט הפרחה")
     st.markdown("---")
 
     supabase_gantt = get_supabase()
@@ -728,12 +731,12 @@ elif page == "📅 גאנט":
     col1, col2, col3 = st.columns(3)
     with col1:
         all_gh = sorted(df_valid['חממה'].unique()) if len(df_valid)>0 else []
-        selected_gh_gantt = st.multiselect("סנן לפי חממה", all_gh, default=all_gh)
+        selected_gh_gantt = st.multiselect("Filter by Greenhouse" if lang_key=="en" else "סנן לפי חממה", all_gh, default=all_gh)
     with col2:
         view_mode = st.radio("View" if lang_key=="en" else "תצוגה", ["Active + Future", "All", "Past Only"] if lang_key=="en" else ["פעיל + עתידי", "הכל", "עבר בלבד"], horizontal=True, index=0)
     with col3:
         all_strains_g = sorted(df_valid['זן'].unique()) if len(df_valid)>0 else []
-        selected_strain = st.multiselect("סנן לפי זן", all_strains_g, default=[])
+        selected_strain = st.multiselect("Filter by Strain" if lang_key=="en" else "סנן לפי זן", all_strains_g, default=[])
 
     filtered_gantt = df_valid[df_valid['חממה'].isin(selected_gh_gantt)] if selected_gh_gantt else df_valid.copy()
     if selected_strain:
@@ -788,7 +791,10 @@ elif page == "📅 גאנט":
         st.plotly_chart(fig, use_container_width=True)
 
         st.markdown("---")
-        st.subheader("Summary" if lang_key=="en" else "סיכום")
+        if lang_key=="en":
+    st.markdown('<h3 style="text-align:left">Summary</h3>', unsafe_allow_html=True)
+else:
+    st.subheader("סיכום")
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Active/Future" if lang_key=="en" else "פעיל/עתידי", len(filtered_gantt[filtered_gantt['end'] >= today]))
