@@ -349,7 +349,7 @@ if page == "📋 שיבוץ אצוות":
         rec_df = pd.DataFrame(rec_results).sort_values("ציון", ascending=False)
         for _, row in rec_df.head(5).iterrows():
             color = "#b8ddb8" if row["ציון"]>=70 else "#f5e6a0" if row["ציון"]>=40 else "#f5c0b8"
-            mark = " ← נבחרה" if row["חממה"]==new_gh else ""
+            mark = " ← Selected" if lang_key=="en" else " ← נבחרה" if row["חממה"]==new_gh else ""
             st.markdown(f'''<div style="background:{color};padding:8px 15px;border-radius:8px;color:#1a3a1e;margin:4px 0;font-size:0.9em;">
             <b>{"Greenhouse" if lang_key=="en" else "חממה"} {row["חממה"]}{mark}</b> | {row["זמינות"]} | ניסיון: {row["ניסיון"]} | ממוצע: {row["ממוצע"]} ימים | ציון: {row["ציון"]}/100
             </div>''', unsafe_allow_html=True)
@@ -364,7 +364,7 @@ if page == "📋 שיבוץ אצוות":
         auto_batch_id = f"G{strain_code}{year_2}{week_num:02d}Z{new_gh}{next_num}"
         st.info(f"מספר אצווה: **{auto_batch_id}**")
         st.caption(f"G=חווה | {strain_code}=זן | {year_2}=שנה | {week_num:02d}=שבוע | Z{new_gh}=חממה | {next_num}=סידורי")
-        new_batch_id = st.text_input("שינוי ידני (אופציונלי)", value=auto_batch_id)
+        new_batch_id = st.text_input("Manual override (optional)" if lang_key=="en" else "שינוי ידני (אופציונלי)", value=auto_batch_id)
         
         if st.button("➕ שבץ אצווה", use_container_width=True):
             if supabase:
