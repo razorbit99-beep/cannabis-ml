@@ -630,7 +630,10 @@ elif page == "🔮 חיזוי אצווה":
             st.plotly_chart(fig, use_container_width=True)
 
 elif page == "📊 ניתוח נתונים":
-    st.subheader("Data Analysis" if lang_key=="en" else "ניתוח נתונים")
+    if lang_key=="en":
+    st.markdown('<h3 style="text-align:left">Data Analysis</h3>', unsafe_allow_html=True)
+else:
+    st.subheader("ניתוח נתונים")
     st.markdown("---")
 
     selected_gh = st.multiselect("Select Greenhouses" if lang_key=="en" else "בחר חממות", sorted(df['חממה'].unique()),
@@ -672,7 +675,7 @@ elif page == "📊 ניתוח נתונים":
                       title="Avg Flowering Days by Strain (min 3 batches)" if lang_key=="en" else "ממוצע ימי הפרחה לפי זן (מינימום 3 אצוות)",
                       color='ממוצע ימים', color_continuous_scale=['#d4edd4','#2d6a4f'],
                       hover_data=['מספר אצוות'],
-                      labels={'ממוצע ימים': 'ממוצע ימי הפרחה', 'זן': 'זן'})
+                      labels={'ממוצע ימים': 'Avg Days' if lang_key=='en' else 'ממוצע ימי הפרחה', 'זן': 'Strain' if lang_key=='en' else 'זן'})
         fig3.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=0.0 if lang_key=='en' else 1.0, title_xanchor='left' if lang_key=='en' else 'right')
         st.plotly_chart(fig3, use_container_width=True)
 
@@ -686,6 +689,9 @@ elif page == "📊 ניתוח נתונים":
         cols_show.append('עונה')
     display_df = filtered[cols_show].copy()
     display_df['סה״כ ימים בהפרחה'] = display_df['סה״כ ימים בהפרחה'].round(1)
+    if lang_key=='en' and 'עונה' in display_df.columns:
+        season_map = {'חורף':'Winter','אביב':'Spring','קיץ':'Summer','סתיו':'Fall'}
+        display_df['עונה'] = display_df['עונה'].map(season_map).fillna(display_df['עונה'])
     if lang_key=='en':
         display_df.columns = ['Batch ID','Strain','Greenhouse','Start Date','Flowering Days'] + (['Season'] if 'עונה' in filtered.columns else [])
     else:
