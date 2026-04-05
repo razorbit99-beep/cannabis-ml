@@ -536,7 +536,7 @@ if page == "🏆 המלצת חממה":
         st.plotly_chart(fig, use_container_width=True)
 
         # טבלה מפורטת
-        st.subheader("פירוט לפי חממה")
+        st.subheader("Breakdown by Greenhouse" if lang_key=="en" else "פירוט לפי חממה")
         st.dataframe(results_df, use_container_width=True, hide_index=True)
 
 if page == "🏠 דשבורד":
@@ -630,22 +630,21 @@ elif page == "🔮 חיזוי אצווה":
             st.plotly_chart(fig, use_container_width=True)
 
 elif page == "📊 ניתוח נתונים":
-    st.subheader("ניתוח נתונים")
+    st.subheader("Data Analysis" if lang_key=="en" else "ניתוח נתונים")
     st.markdown("---")
 
-    selected_gh = st.multiselect("בחר חממות", sorted(df['חממה'].unique()),
+    selected_gh = st.multiselect("Select Greenhouses" if lang_key=="en" else "בחר חממות", sorted(df['חממה'].unique()),
                                   default=sorted(df['חממה'].unique())[:3])
     filtered = df[df['חממה'].isin(selected_gh)] if selected_gh else df
 
     # גרף 1 - ממוצע לפי חודש
-    month_names = {1:'ינואר',2:'פברואר',3:'מרץ',4:'אפריל',5:'מאי',6:'יוני',
-                   7:'יולי',8:'אוגוסט',9:'ספטמבר',10:'אוקטובר',11:'נובמבר',12:'דצמבר'}
+    month_names = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May',6:'Jun',7:'Jul',8:'Aug',9:'Sep',10:'Oct',11:'Nov',12:'Dec'} if lang_key=='en' else {1:'ינואר',2:'פברואר',3:'מרץ',4:'אפריל',5:'מאי',6:'יוני',7:'יולי',8:'אוגוסט',9:'ספטמבר',10:'אוקטובר',11:'נובמבר',12:'דצמבר'}
     monthly = filtered.groupby('חודש_התחלה')['סה״כ ימים בהפרחה'].mean().reset_index()
     monthly['חודש'] = monthly['חודש_התחלה'].map(month_names)
     fig1 = px.bar(monthly, x='חודש', y='סה״כ ימים בהפרחה',
-                  title="ממוצע ימי הפרחה לפי חודש כניסה",
+                  title="Avg Flowering Days by Entry Month" if lang_key=="en" else "ממוצע ימי הפרחה לפי חודש כניסה",
                   color='סה״כ ימים בהפרחה', color_continuous_scale=['#d4edd4','#2d6a4f'],
-                  labels={'סה״כ ימים בהפרחה': 'ממוצע ימי הפרחה', 'חודש': 'חודש כניסה להפרחה'})
+                  labels={'סה״כ ימים בהפרחה': 'Avg Flowering Days' if lang_key=='en' else 'ממוצע ימי הפרחה', 'חודש': 'Entry Month' if lang_key=='en' else 'חודש כניסה להפרחה'})
     fig1.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=0.0 if lang_key=='en' else 1.0, title_xanchor='left' if lang_key=='en' else 'right')
     st.plotly_chart(fig1, use_container_width=True)
 
@@ -657,10 +656,10 @@ elif page == "📊 ניתוח נתונים":
         gh_perf.columns = ['חממה', 'ממוצע ימים', 'מספר אצוות']
         gh_perf = gh_perf.sort_values('ממוצע ימים')
         fig2 = px.bar(gh_perf, x='חממה', y='ממוצע ימים',
-                      title="ממוצע ימי הפרחה לפי חממה",
+                      title="Avg Flowering Days by Greenhouse" if lang_key=="en" else "ממוצע ימי הפרחה לפי חממה",
                       color='ממוצע ימים', color_continuous_scale=['#d4edd4','#2d6a4f'],
                       hover_data=['מספר אצוות'],
-                      labels={'ממוצע ימים': 'ממוצע ימי הפרחה', 'חממה': 'חממה'})
+                      labels={'ממוצע ימים': 'Avg Days' if lang_key=='en' else 'ממוצע ימי הפרחה', 'חממה': 'Greenhouse' if lang_key=='en' else 'חממה'})
         fig2.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=0.0 if lang_key=='en' else 1.0, title_xanchor='left' if lang_key=='en' else 'right')
         st.plotly_chart(fig2, use_container_width=True)
 
@@ -670,7 +669,7 @@ elif page == "📊 ניתוח נתונים":
         strain_perf.columns = ['זן', 'ממוצע ימים', 'מספר אצוות']
         strain_perf = strain_perf[strain_perf['מספר אצוות'] >= 3].sort_values('ממוצע ימים')
         fig3 = px.bar(strain_perf, x='זן', y='ממוצע ימים',
-                      title="ממוצע ימי הפרחה לפי זן (מינימום 3 אצוות)",
+                      title="Avg Flowering Days by Strain (min 3 batches)" if lang_key=="en" else "ממוצע ימי הפרחה לפי זן (מינימום 3 אצוות)",
                       color='ממוצע ימים', color_continuous_scale=['#d4edd4','#2d6a4f'],
                       hover_data=['מספר אצוות'],
                       labels={'ממוצע ימים': 'ממוצע ימי הפרחה', 'זן': 'זן'})
@@ -678,7 +677,7 @@ elif page == "📊 ניתוח נתונים":
         st.plotly_chart(fig3, use_container_width=True)
 
     # טבלה נקייה
-    st.subheader("טבלת נתונים")
+    st.subheader("Data Table" if lang_key=="en" else "טבלת נתונים")
     cols_show = ['מספר אצווה','זן','חממה','תאריך תחילת הפרחה','סה״כ ימים בהפרחה']
     if 'עונה' in filtered.columns:
         cols_show.append('עונה')
