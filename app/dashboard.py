@@ -398,7 +398,7 @@ if page == "📋 שיבוץ אצוות":
                     st.cache_data.clear()
                     st.rerun()
                 except Exception as e:
-                    st.error(f"שגיאה: {e}")
+                    st.error(f"Connection error: {e}" if lang_key=="en" else f"שגיאה: {e}")
             else:
                 st.error("אין חיבור למסד נתונים")
     
@@ -436,7 +436,7 @@ if page == "📋 שיבוץ אצוות":
                             st.cache_data.clear()
                             st.rerun()
                         except Exception as e:
-                            st.error(f"שגיאה: {e}")
+                            st.error(f"Connection error: {e}" if lang_key=="en" else f"שגיאה: {e}")
             else:
                 new_end = st.date_input("תאריך סיום חדש", datetime.today())
                 if st.button("✏️ עדכן", type="primary"):
@@ -447,7 +447,7 @@ if page == "📋 שיבוץ אצוות":
                             st.cache_data.clear()
                             st.rerun()
                         except Exception as e:
-                            st.error(f"שגיאה: {e}")
+                            st.error(f"Connection error: {e}" if lang_key=="en" else f"שגיאה: {e}")
 
 if page == "🏆 המלצת חממה":
     st.title("🏆 המלצת חממה חכמה")
@@ -718,7 +718,7 @@ elif page == "📅 גאנט":
             df_valid = df_valid[df_valid['start'] >= '2023-01-01']
             st.info(f"סה״כ {len(df_valid)} אצוות במסד")
         except Exception as e:
-            st.error(f"שגיאה: {e}")
+            st.error(f"Connection error: {e}" if lang_key=="en" else f"שגיאה: {e}")
             df_valid = pd.DataFrame()
     else:
         df_valid = pd.DataFrame()
