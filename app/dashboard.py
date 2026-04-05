@@ -313,7 +313,7 @@ if page == "📋 שיבוץ אצוות":
         predicted_days = round(hist_match.mean() if len(hist_match)>0 else df['סה״כ ימים בהפרחה'].mean(), 1)
         end_date_pred = datetime.combine(new_date, datetime.min.time()) + timedelta(days=predicted_days)
         
-        st.info(f"⏱️ חיזוי: {predicted_days} ימי הפרחה | תאריך קציר משוער: {end_date_pred.strftime('%d/%m/%Y')}")
+        st.info(f"⏱️ Prediction: {predicted_days} flowering days | Est. harvest: {end_date_pred.strftime('%d/%m/%Y')}")
         
         # המלצת חממות
         st.markdown("---")
@@ -351,7 +351,7 @@ if page == "📋 שיבוץ אצוות":
             color = "#b8ddb8" if row["ציון"]>=70 else "#f5e6a0" if row["ציון"]>=40 else "#f5c0b8"
             mark = " ← Selected" if lang_key=="en" else " ← נבחרה" if row["חממה"]==new_gh else ""
             st.markdown(f'''<div style="background:{color};padding:8px 15px;border-radius:8px;color:#1a3a1e;margin:4px 0;font-size:0.9em;">
-            <b>{"Greenhouse" if lang_key=="en" else "חממה"} {row["חממה"]}{mark}</b> | {row["זמינות"]} | ניסיון: {row["ניסיון"]} | ממוצע: {row["ממוצע"]} ימים | ציון: {row["ציון"]}/100
+            <b>{"Greenhouse" if lang_key=="en" else "חממה"} {row["חממה"]}{mark}</b> | {row["זמינות"]} | ניסיון: {row["ניסיון"]} | Avg: {row["ממוצע"]} days | Score: {row["ציון"]}/100
             </div>''', unsafe_allow_html=True)
         st.markdown("---")
         week_num = new_date.isocalendar()[1]
@@ -362,7 +362,7 @@ if page == "📋 שיבוץ אצוות":
                    if f"Z{new_gh}" in str(b) and year_2 in str(b)]
         next_num = len(existing) + 1
         auto_batch_id = f"G{strain_code}{year_2}{week_num:02d}Z{new_gh}{next_num}"
-        st.info(f"מספר אצווה: **{auto_batch_id}**")
+        st.info(f"Batch ID: **{auto_batch_id}**")
         st.caption(f"G=חווה | {strain_code}=זן | {year_2}=שנה | {week_num:02d}=שבוע | Z{new_gh}=חממה | {next_num}=סידורי")
         new_batch_id = st.text_input("Manual override (optional)" if lang_key=="en" else "שינוי ידני (אופציונלי)", value=auto_batch_id)
         
@@ -508,7 +508,7 @@ if page == "🏆 המלצת חממה":
         <div style="background: #e8f5e9; padding: 20px; border-radius: 12px; border: 1px solid #2d6a4f; text-align: center; margin-bottom: 20px;">
             <h2 style="color:#1a3a1e;font-size:1.3em;">חממה מומלצת: {best['חממה']}</h2>
             <h3 style="color:#2d6a4f;font-size:1.1em;">ציון התאמה: {best['ציון התאמה']}/100</h3>
-            <p style="color:#333;font-size:0.9em;">ניסיון: {best['ניסיון עם הזן']} אצוות | ממוצע: {best['ממוצע ימים']} ימים | {best['פנויה בתאריך']}</p>
+            <p style="color:#333;font-size:0.9em;">ניסיון: {best['ניסיון עם הזן']} אצוות | Avg: {best['ממוצע ימים']} ימים | {best['פנויה בתאריך']}</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -603,16 +603,16 @@ elif page == "🔮 חיזוי אצווה":
         with col3:
             st.metric("🌤️ עונה", season)
 
-        st.info(f"שיטת חיזוי: {method}")
+        st.info(f"שיטת Prediction: {method}")
 
         hist = df[(df['חממה'] == greenhouse) & (df['זן'] == strain)]['סה״כ ימים בהפרחה']
         if len(hist) > 0:
-            st.markdown(f"**📚 היסטוריה:** {len(hist)} אצוות קודמות | ממוצע: {hist.mean():.1f} ימים | סטיית תקן: {hist.std():.1f} ימים")
+            st.markdown(f"**📚 היסטוריה:** {len(hist)} אצוות קודמות | Avg: {hist.mean():.1f} ימים | סטיית תקן: {hist.std():.1f} ימים")
 
             fig = px.histogram(hist, title=f"התפלגות ימי הפרחה - זן {strain} בחממה {greenhouse}",
                              labels={'value': 'ימי הפרחה'}, color_discrete_sequence=['#2d6a4f'])
             fig.add_vline(x=pred, line_dash="dash", line_color="red",
-                         annotation_text=f"חיזוי: {pred} ימים")
+                         annotation_text=f"Prediction: {pred} ימים")
             st.plotly_chart(fig, use_container_width=True)
 
 elif page == "📊 ניתוח נתונים":
