@@ -351,7 +351,7 @@ if page == "📋 שיבוץ אצוות":
             color = "#b8ddb8" if row["ציון"]>=70 else "#f5e6a0" if row["ציון"]>=40 else "#f5c0b8"
             mark = " ← Selected" if lang_key=="en" else " ← נבחרה" if row["חממה"]==new_gh else ""
             st.markdown(f'''<div style="background:{color};padding:8px 15px;border-radius:8px;color:#1a3a1e;margin:4px 0;font-size:0.9em;">
-            <b>{"Greenhouse" if lang_key=="en" else "חממה"} {row["חממה"]}{mark}</b> | {row["זמינות"]} | ניסיון: {row["ניסיון"]} | Avg: {row["ממוצע"]} days | Score: {row["ציון"]}/100
+            <b>{"Greenhouse" if lang_key=="en" else "חממה"} {row["חממה"]}{mark}</b> | {row["זמינות"]} | {"Experience" if lang_key=="en" else "ניסיון"}: {row["ניסיון"]} | Avg: {row["ממוצע"]} days | Score: {row["ציון"]}/100
             </div>''', unsafe_allow_html=True)
         st.markdown("---")
         week_num = new_date.isocalendar()[1]
