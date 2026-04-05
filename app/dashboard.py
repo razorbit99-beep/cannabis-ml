@@ -446,7 +446,7 @@ if page == "📋 שיבוץ אצוות":
                 "Search Batch" if lang_key=="en" else "חיפוש אצווה",
                 options=[""] + batch_ids,
                 index=0,
-                format_func=lambda x: "הכנס מספר אצווה..." if x == "" else x
+                format_func=lambda x: ("Enter batch ID..." if lang_key=="en" else "הכנס מספר אצווה...") if x == "" else x
             )
             action = st.radio("Action" if lang_key=="en" else "פעולה", ["Delete", "Update End Date"] if lang_key=="en" else ["מחיקה", "עדכון תאריך סיום"])
             
