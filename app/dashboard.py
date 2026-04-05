@@ -209,6 +209,9 @@ if lang_key == "en":
     p, li { direction: ltr !important; text-align: left !important; }
     input { direction: ltr !important; text-align: left !important; }
     [data-baseweb="select"] { direction: ltr !important; }
+    [data-testid="stHorizontalBlock"] { direction: ltr !important; }
+    [data-testid="column"] { direction: ltr !important; text-align: left !important; }
+    [data-testid="stColumn"] { direction: ltr !important; text-align: left !important; }
     [data-baseweb="input"] { direction: ltr !important; text-align: left !important; }
     </style>""", unsafe_allow_html=True)
 
@@ -451,7 +454,7 @@ if page == "📋 שיבוץ אצוות":
                 index=0,
                 format_func=lambda x: ("Enter batch ID..." if lang_key=="en" else "הכנס מספר אצווה...") if x == "" else x
             )
-            action = st.radio("Action" if lang_key=="en" else "פעולה", ["Delete", "Update End Date"] if lang_key=="en" else ["מחיקה", "עדכון תאריך סיום"])
+            action = st.radio("Action" if lang_key=="en" else "פעולה", ["Delete", "Update End Date"] if lang_key=="en" else ["מחיקה", "עדכון תאריך סיום"], horizontal=False)
             
             if action in ["מחיקה", "Delete"]:
                 if st.button("Delete Batch" if lang_key=="en" else "Delete Batch" if lang_key=="en" else "מחק אצווה", type="primary"):
