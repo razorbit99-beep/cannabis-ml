@@ -198,7 +198,15 @@ if lang_key == "en":
     [data-testid="stHeadingWithActionElements"] > div { justify-content: flex-start !important; }
     .stMetric { direction: ltr !important; }
     .stMetric label { text-align: left !important; }
-    label[data-testid="stWidgetLabel"] { text-align: left !important; direction: ltr !important; float: left !important; }
+    label[data-testid="stWidgetLabel"] { text-align: left !important; direction: ltr !important; }
+    .stRadio { direction: ltr !important; text-align: left !important; }
+    .stRadio label { text-align: left !important; }
+    .stSelectbox label { direction: ltr !important; text-align: left !important; }
+    .stTextInput label { direction: ltr !important; text-align: left !important; }
+    .stDateInput label { direction: ltr !important; text-align: left !important; }
+    .stMultiSelect label { direction: ltr !important; text-align: left !important; }
+    .stCheckbox label { direction: ltr !important; text-align: left !important; }
+    p, li { direction: ltr !important; text-align: left !important; }
     </style>""", unsafe_allow_html=True)
 
 col_logo, col_title = st.columns([1, 4])
