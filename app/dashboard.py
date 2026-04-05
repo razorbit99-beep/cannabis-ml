@@ -207,6 +207,9 @@ if lang_key == "en":
     .stMultiSelect label { direction: ltr !important; text-align: left !important; }
     .stCheckbox label { direction: ltr !important; text-align: left !important; }
     p, li { direction: ltr !important; text-align: left !important; }
+    input { direction: ltr !important; text-align: left !important; }
+    [data-baseweb="select"] { direction: ltr !important; }
+    [data-baseweb="input"] { direction: ltr !important; text-align: left !important; }
     </style>""", unsafe_allow_html=True)
 
 col_logo, col_title = st.columns([1, 4])
