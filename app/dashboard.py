@@ -435,15 +435,15 @@ if page == "📋 שיבוץ אצוות":
         if len(batches_db) > 0:
             batch_ids = batches_db['batch_id'].tolist()
             selected_batch = st.selectbox(
-                "חיפוש אצווה",
+                "Search Batch" if lang_key=="en" else "חיפוש אצווה",
                 options=[""] + batch_ids,
                 index=0,
                 format_func=lambda x: "הכנס מספר אצווה..." if x == "" else x
             )
-            action = st.radio("פעולה", ["מחיקה", "עדכון תאריך סיום"])
+            action = st.radio("Action" if lang_key=="en" else "פעולה", ["Delete", "Update End Date"] if lang_key=="en" else ["מחיקה", "עדכון תאריך סיום"])
             
-            if action == "מחיקה":
-                if st.button("Delete Batch" if lang_key=="en" else "מחק אצווה", type="primary"):
+            if action in ["מחיקה", "Delete"]:
+                if st.button("Delete Batch" if lang_key=="en" else "Delete Batch" if lang_key=="en" else "מחק אצווה", type="primary"):
                     if supabase:
                         try:
                             supabase.table('batches').delete().eq('batch_id', selected_batch).execute()
@@ -453,7 +453,7 @@ if page == "📋 שיבוץ אצוות":
                         except Exception as e:
                             st.error(f"Connection error: {e}" if lang_key=="en" else f"שגיאה: {e}")
             else:
-                new_end = st.date_input("תאריך סיום חדש", datetime.today())
+                new_end = st.date_input("New End Date" if lang_key=="en" else "תאריך סיום חדש", datetime.today())
                 if st.button("✏️ עדכן", type="primary"):
                     if supabase:
                         try:
