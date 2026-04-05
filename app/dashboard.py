@@ -631,9 +631,9 @@ elif page == "🔮 חיזוי אצווה":
 
 elif page == "📊 ניתוח נתונים":
     if lang_key=="en":
-    st.markdown('<h3 style="text-align:left">Data Analysis</h3>', unsafe_allow_html=True)
-else:
-    st.subheader("ניתוח נתונים")
+        st.markdown('<h3 style="text-align:left">Data Analysis</h3>', unsafe_allow_html=True)
+    else:
+        st.subheader("ניתוח נתונים")
     st.markdown("---")
 
     selected_gh = st.multiselect("Select Greenhouses" if lang_key=="en" else "בחר חממות", sorted(df['חממה'].unique()),
