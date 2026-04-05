@@ -246,7 +246,7 @@ st.session_state.current_page_he = page
 st.query_params["page"] = page
 
 if page == "📋 שיבוץ אצוות":
-    st.subheader("Batch Assignment" if lang_key=="en" else "שיבוץ אצוות")
+    st.markdown('<h3 style="text-align:left">Batch Assignment</h3>', unsafe_allow_html=True) if lang_key=="en" else st.subheader("שיבוץ אצוות")
     st.markdown("---")
     
     supabase = get_supabase()
@@ -267,7 +267,7 @@ if page == "📋 שיבוץ אצוות":
     tab1, tab2, tab3 = st.tabs(["➕ Add Batch", "📋 Existing Batches", "🔄 Update/Delete"] if lang_key=="en" else ["➕ הוספת אצווה", "📋 אצוות קיימות", "🔄 עדכון/מחיקה"])
     
     with tab1:
-        st.subheader("Add New Batch" if lang_key=="en" else "הוספת אצווה חדשה")
+        st.markdown('<h3 style="text-align:left">Add New Batch</h3>', unsafe_allow_html=True) if lang_key=="en" else st.subheader("הוספת אצווה חדשה")
         col1, col2, col3 = st.columns(3)
         with col1:
             all_strains_list = sorted(df['זן'].unique().tolist())
@@ -331,7 +331,7 @@ if page == "📋 שיבוץ אצוות":
         
         # המלצת חממות
         st.markdown("---")
-        st.subheader("Recommended Greenhouses" if lang_key=="en" else "חממות מומלצות לזן זה")
+        st.markdown('<h3 style="text-align:left">Recommended Greenhouses</h3>', unsafe_allow_html=True) if lang_key=="en" else st.subheader("חממות מומלצות לזן זה")
         rec_results = []
         for gh_opt in sorted(df["חממה"].unique()):
             hist_opt = df[(df["חממה"]==gh_opt)&(df["זן"]==new_strain)]
@@ -403,7 +403,7 @@ if page == "📋 שיבוץ אצוות":
                 st.error("אין חיבור למסד נתונים")
     
     with tab2:
-        st.subheader("All Batches" if lang_key=="en" else "כל האצוות")
+        st.markdown('<h3 style="text-align:left">All Batches</h3>', unsafe_allow_html=True) if lang_key=="en" else st.subheader("כל האצוות")
         batches_db = load_batches_db()
         if len(batches_db) > 0:
             show_planned = st.checkbox("Show planned only" if lang_key=="en" else "הצג רק מתוכננות", value=False)
@@ -415,7 +415,7 @@ if page == "📋 שיבוץ אצוות":
                         use_container_width=True, hide_index=True)
     
     with tab3:
-        st.subheader("Update or Delete Batch" if lang_key=="en" else "עדכון או מחיקת אצווה")
+        st.markdown('<h3 style="text-align:left">Update or Delete Batch</h3>', unsafe_allow_html=True) if lang_key=="en" else st.subheader("עדכון או מחיקת אצווה")
         batches_db = load_batches_db()
         if len(batches_db) > 0:
             batch_ids = batches_db['batch_id'].tolist()
@@ -536,7 +536,7 @@ if page == "🏆 המלצת חממה":
         st.plotly_chart(fig, use_container_width=True)
 
         # טבלה מפורטת
-        st.subheader("Breakdown by Greenhouse" if lang_key=="en" else "פירוט לפי חממה")
+        st.markdown('<h3 style="text-align:left">Breakdown by Greenhouse</h3>', unsafe_allow_html=True) if lang_key=="en" else st.subheader("פירוט לפי חממה")
         st.dataframe(results_df, use_container_width=True, hide_index=True)
 
 if page == "🏠 דשבורד":
