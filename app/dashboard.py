@@ -678,9 +678,9 @@ elif page == "📊 ניתוח נתונים":
 
     # טבלה נקייה
     if lang_key=="en":
-    st.markdown('<h3 style="text-align:left">Data Table</h3>', unsafe_allow_html=True)
-else:
-    st.subheader("טבלת נתונים")
+        st.markdown('<h3 style="text-align:left">Data Table</h3>', unsafe_allow_html=True)
+    else:
+        st.subheader("טבלת נתונים")
     cols_show = ['מספר אצווה','זן','חממה','תאריך תחילת הפרחה','סה״כ ימים בהפרחה']
     if 'עונה' in filtered.columns:
         cols_show.append('עונה')
