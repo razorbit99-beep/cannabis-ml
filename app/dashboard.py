@@ -174,16 +174,19 @@ TRANSLATIONS = {
 }
 
 if "lang" not in st.session_state:
-    st.session_state.lang = "he"
+    params = st.query_params
+    st.session_state.lang = params.get("lang", "he")
 
 col_he, col_en = st.sidebar.columns(2)
 with col_he:
     if st.button("🇮🇱 עברית", use_container_width=True):
         st.session_state.lang = "he"
+        st.query_params["lang"] = "he"
         st.rerun()
 with col_en:
     if st.button("🇺🇸 English", use_container_width=True):
         st.session_state.lang = "en"
+        st.query_params["lang"] = "en"
         st.rerun()
 
 lang = "עברית" if st.session_state.lang == "he" else "English"
