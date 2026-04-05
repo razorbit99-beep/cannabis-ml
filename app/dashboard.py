@@ -304,7 +304,7 @@ if page == "📋 שיבוץ אצוות":
                     if len(busy) == 0:
                         hist = df[(df['חממה']==gh)&(df['זן']==new_strain)]
                         exp = f" | {len(hist)} אצוות עם הזן" if len(hist)>0 else " | אין ניסיון עם הזן"
-                        st.success(f"✅ חממה {gh} פנויה{exp}")
+                        st.success(f"✅ Greenhouse {gh} available{exp}" if lang_key=="en" else f"✅ חממה {gh} פנויה{exp}")
             else:
                 st.success(f"✅ Greenhouse {new_gh} available on this date!" if lang_key=="en" else f"✅ Greenhouse {new_gh} available on this date!" if lang_key=="en" else f"✅ חממה {new_gh} פנויה בתאריך זה!")
         
@@ -340,10 +340,10 @@ if page == "📋 שיבוץ אצוות":
                     (batches_check["end_date"]>=pd.Timestamp(new_date))
                 ]
                 avail_score = 30 if len(busy)==0 else 0
-                avail_txt = "✅ פנויה" if len(busy)==0 else "❌ תפוסה"
+                avail_txt = ("✅ Available" if lang_key=="en" else "✅ פנויה") if len(busy)==0 else ("❌ Busy" if lang_key=="en" else "❌ תפוסה")
             else:
                 avail_score = 30
-                avail_txt = "✅ פנויה"
+                avail_txt = "✅ Available" if lang_key=="en" else "✅ פנויה"
             total = round(exp_score + stab_score + avail_score)
             rec_results.append({"חממה":gh_opt,"ניסיון":n,"ממוצע":round(avg,1),"זמינות":avail_txt,"ציון":total})
         rec_df = pd.DataFrame(rec_results).sort_values("ציון", ascending=False)
@@ -496,7 +496,7 @@ if page == "🏆 המלצת חממה":
                 'ניסיון עם הזן': n_strain,
                 'ממוצע ימים': round(avg_days, 1) if not pd.isna(avg_days) else 46,
                 'יציבות': round(std_days, 1) if not pd.isna(std_days) else 5,
-                'פנויה בתאריך': '✅ כן' if is_available else '❌ תפוסה',
+                'פנויה בתאריך': ('✅ Yes' if lang_key=="en" else '✅ כן') if is_available else ('❌ No' if lang_key=="en" else '❌ תפוסה'),
                 'ציון התאמה': round(total_score),
             })
 
