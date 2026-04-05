@@ -250,14 +250,14 @@ if page == "📋 שיבוץ אצוות":
             columns={'מספר אצווה':'batch_id','זן':'strain','חממה':'greenhouse',
                      'תאריך תחילת הפרחה':'start_date','תאריך סיום הפרחה':'end_date','סה״כ ימים בהפרחה':'total_days'})
 
-    tab1, tab2, tab3 = st.tabs(["➕ הוספת אצווה", "📋 אצוות קיימות", "🔄 עדכון/מחיקה"])
+    tab1, tab2, tab3 = st.tabs(["➕ Add Batch", "📋 Existing Batches", "🔄 Update/Delete"] if lang_key=="en" else ["➕ הוספת אצווה", "📋 אצוות קיימות", "🔄 עדכון/מחיקה"])
     
     with tab1:
         st.subheader("Add New Batch" if lang_key=="en" else "הוספת אצווה חדשה")
         col1, col2, col3 = st.columns(3)
         with col1:
             all_strains_list = sorted(df['זן'].unique().tolist())
-            strain_search = st.text_input("🔍 חיפוש זן", placeholder="Type strain name..." if lang_key=="en" else "הקלד שם זן...")
+            strain_search = st.text_input("🔍 Search Strain" if lang_key=="en" else "🔍 חיפוש זן", placeholder="Type strain name..." if lang_key=="en" else "הקלד שם זן...")
             if strain_search:
                 filtered_strains = [s for s in all_strains_list if strain_search.upper() in s.upper()]
             else:
@@ -270,7 +270,7 @@ if page == "📋 שיבוץ אצוות":
                 new_strain = strain_search.upper()
             
             # הוספת זן חדש
-            with st.expander("➕ הוסף זן חדש"):
+            with st.expander("➕ Add New Strain" if lang_key=="en" else "➕ הוסף זן חדש"):
                 new_strain_name = st.text_input("שם הזן החדש (עד 5 תווים)", max_chars=5).upper()
                 if new_strain_name and st.button("הוסף זן"):
                     new_strain = new_strain_name
@@ -306,7 +306,7 @@ if page == "📋 שיבוץ אצוות":
                         exp = f" | {len(hist)} אצוות עם הזן" if len(hist)>0 else " | אין ניסיון עם הזן"
                         st.success(f"✅ חממה {gh} פנויה{exp}")
             else:
-                st.success(f"✅ Greenhouse {new_gh} available on this date!" if lang_key=="en" else f"✅ חממה {new_gh} פנויה בתאריך זה!")
+                st.success(f"✅ Greenhouse {new_gh} available on this date!" if lang_key=="en" else f"✅ Greenhouse {new_gh} available on this date!" if lang_key=="en" else f"✅ חממה {new_gh} פנויה בתאריך זה!")
         
         # חיזוי ימי הפרחה
         hist_match = df[(df['חממה']==new_gh)&(df['זן']==new_strain)]['סה״כ ימים בהפרחה']
@@ -366,7 +366,7 @@ if page == "📋 שיבוץ אצוות":
         st.caption(f"G=חווה | {strain_code}=זן | {year_2}=שנה | {week_num:02d}=שבוע | Z{new_gh}=חממה | {next_num}=סידורי")
         new_batch_id = st.text_input("Manual override (optional)" if lang_key=="en" else "שינוי ידני (אופציונלי)", value=auto_batch_id)
         
-        if st.button("➕ שבץ אצווה", use_container_width=True):
+        if st.button("➕ Assign Batch" if lang_key=="en" else "➕ שבץ אצווה", use_container_width=True):
             if supabase:
                 try:
                     record = {
