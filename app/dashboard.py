@@ -363,7 +363,7 @@ if page == "📋 שיבוץ אצוות":
         next_num = len(existing) + 1
         auto_batch_id = f"G{strain_code}{year_2}{week_num:02d}Z{new_gh}{next_num}"
         st.info(f"Batch ID: **{auto_batch_id}**")
-        st.caption(f"G=חווה | {strain_code}=זן | {year_2}=שנה | {week_num:02d}=שבוע | Z{new_gh}=חממה | {next_num}=סידורי")
+        st.caption(f"G=Farm | {strain_code}=Strain | {year_2}=Yr | {week_num:02d}=Wk | Z{new_gh}=GH | {next_num}=Seq" if lang_key=="en" else f"G=חווה | {strain_code}=זן | {year_2}=שנה | {week_num:02d}=שבוע | Z{new_gh}=חממה | {next_num}=סידורי")
         new_batch_id = st.text_input("Manual override (optional)" if lang_key=="en" else "שינוי ידני (אופציונלי)", value=auto_batch_id)
         
         if st.button("➕ Assign Batch" if lang_key=="en" else "➕ שבץ אצווה", use_container_width=True):
