@@ -699,7 +699,7 @@ elif page == "📊 ניתוח נתונים":
     st.dataframe(display_df, use_container_width=True, hide_index=True)
 
 elif page == "📅 גאנט":
-    st.subheader("גאנט הפרחה")
+    st.subheader("Flowering Gantt" if lang_key=="en" else "גאנט הפרחה")
     st.markdown("---")
 
     supabase_gantt = get_supabase()
@@ -713,10 +713,10 @@ elif page == "📅 גאנט":
             raw['חממה'] = raw['greenhouse']
             raw['מספר אצווה'] = raw['batch_id']
             raw['סה״כ ימים'] = raw['total_days']
-            raw['סוג'] = raw['is_planned'].apply(lambda x: '📋 מתוכנן' if x else '✅ היסטורי')
+            raw['סוג'] = raw['is_planned'].apply(lambda x: ('📋 Planned' if lang_key=='en' else '📋 מתוכנן') if x else ('✅ Historical' if lang_key=='en' else '✅ היסטורי'))
             df_valid = raw.dropna(subset=['start','end']).copy()
             df_valid = df_valid[df_valid['start'] >= '2023-01-01']
-            st.info(f"סה״כ {len(df_valid)} אצוות במסד")
+            st.info(f"Total {len(df_valid)} batches in DB" if lang_key=="en" else f"סה״כ {len(df_valid)} אצוות במסד")
         except Exception as e:
             st.error(f"Connection error: {e}" if lang_key=="en" else f"שגיאה: {e}")
             df_valid = pd.DataFrame()
@@ -730,7 +730,7 @@ elif page == "📅 גאנט":
         all_gh = sorted(df_valid['חממה'].unique()) if len(df_valid)>0 else []
         selected_gh_gantt = st.multiselect("סנן לפי חממה", all_gh, default=all_gh)
     with col2:
-        view_mode = st.radio("תצוגה", ["פעיל + עתידי", "הכל", "עבר בלבד"], horizontal=True, index=0)
+        view_mode = st.radio("View" if lang_key=="en" else "תצוגה", ["Active + Future", "All", "Past Only"] if lang_key=="en" else ["פעיל + עתידי", "הכל", "עבר בלבד"], horizontal=True, index=0)
     with col3:
         all_strains_g = sorted(df_valid['זן'].unique()) if len(df_valid)>0 else []
         selected_strain = st.multiselect("סנן לפי זן", all_strains_g, default=[])
@@ -744,7 +744,7 @@ elif page == "📅 גאנט":
     elif view_mode in ["עבר בלבד", "Past Only"]:
         filtered_gantt = filtered_gantt[filtered_gantt['end'] < today]
 
-    st.markdown(f"**מציג {len(filtered_gantt)} אצוות**")
+    st.markdown(f"**Showing {len(filtered_gantt)} batches**" if lang_key=="en" else f"**מציג {len(filtered_gantt)} אצוות**")
 
     if len(filtered_gantt) == 0:
         st.warning("אין אצוות להצגה בטווח זה")
@@ -776,7 +776,7 @@ elif page == "📅 גאנט":
             x_end='end',
             y='שורה',
             color='זן',
-            title="גאנט אצוות הפרחה",
+            title="Flowering Batches Gantt" if lang_key=="en" else "גאנט אצוות הפרחה",
             hover_data=['מספר אצווה','סוג'],
             color_discrete_sequence=['#a8c8e8','#b8ddb8','#f5c8a0','#d4a8b8','#c8c8e8','#f5e0a0','#a8d4d0','#e8c0b8','#c0d4a8','#d4c0e0']
         )
@@ -788,15 +788,15 @@ elif page == "📅 גאנט":
         st.plotly_chart(fig, use_container_width=True)
 
         st.markdown("---")
-        st.subheader("סיכום")
+        st.subheader("Summary" if lang_key=="en" else "סיכום")
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("פעיל/עתידי", len(filtered_gantt[filtered_gantt['end'] >= today]))
+            st.metric("Active/Future" if lang_key=="en" else "פעיל/עתידי", len(filtered_gantt[filtered_gantt['end'] >= today]))
         with col2:
-            st.metric("הסתיים", len(filtered_gantt[filtered_gantt['end'] < today]))
+            st.metric("Completed" if lang_key=="en" else "הסתיים", len(filtered_gantt[filtered_gantt['end'] < today]))
         with col3:
             days_col = [c for c in filtered_gantt.columns if 'ימים' in str(c) or 'days' in str(c).lower()]
             if days_col:
-                st.metric("ממוצע ימים", f"{filtered_gantt[days_col[0]].mean():.1f}")
+                st.metric("Avg Days" if lang_key=="en" else "ממוצע ימים", f"{filtered_gantt[days_col[0]].mean():.1f}")
             else:
-                st.metric("ממוצע ימים", "N/A")
+                st.metric("Avg Days" if lang_key=="en" else "ממוצע ימים", "N/A")
