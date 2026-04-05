@@ -739,9 +739,9 @@ elif page == "📅 גאנט":
     if selected_strain:
         filtered_gantt = filtered_gantt[filtered_gantt['זן'].isin(selected_strain)]
 
-    if view_mode == "פעיל + עתידי":
+    if view_mode in ["פעיל + עתידי", "Active + Future"] and 'end' in filtered_gantt.columns:
         filtered_gantt = filtered_gantt[filtered_gantt['end'] >= today]
-    elif view_mode == "עבר בלבד":
+    elif view_mode in ["עבר בלבד", "Past Only"]:
         filtered_gantt = filtered_gantt[filtered_gantt['end'] < today]
 
     st.markdown(f"**מציג {len(filtered_gantt)} אצוות**")
