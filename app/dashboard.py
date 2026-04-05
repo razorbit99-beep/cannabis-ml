@@ -223,16 +223,27 @@ if gb is not None:
 else:
     st.sidebar.warning(T["ml_inactive"])
 
-page_display = st.sidebar.radio(T["nav"], T["pages"])
-# המר לעברית לצורך הלוגיקה
-en_to_he = {
-    "🏠 Dashboard": "🏠 דשבורד",
-    "🔮 Batch Prediction": "🔮 חיזוי אצווה",
-    "📋 Batch Assignment": "📋 שיבוץ אצוות",
-    "📊 Data Analysis": "📊 ניתוח נתונים",
-    "📅 Gantt": "📅 גאנט"
+# שמור דף נוכחי ב-session
+if "current_page_he" not in st.session_state:
+    params = st.query_params
+    st.session_state.current_page_he = params.get("page", "🏠 דשבורד")
+
+he_to_en = {
+    "🏠 דשבורד": "🏠 Dashboard",
+    "🔮 חיזוי אצווה": "🔮 Batch Prediction",
+    "📋 שיבוץ אצוות": "📋 Batch Assignment",
+    "📊 ניתוח נתונים": "📊 Data Analysis",
+    "📅 גאנט": "📅 Gantt"
 }
+en_to_he = {v: k for k, v in he_to_en.items()}
+
+current_display = he_to_en.get(st.session_state.current_page_he, st.session_state.current_page_he) if lang_key=="en" else st.session_state.current_page_he
+default_idx = T["pages"].index(current_display) if current_display in T["pages"] else 0
+
+page_display = st.sidebar.radio(T["nav"], T["pages"], index=default_idx)
 page = en_to_he.get(page_display, page_display)
+st.session_state.current_page_he = page
+st.query_params["page"] = page
 
 if page == "📋 שיבוץ אצוות":
     st.subheader("Batch Assignment" if lang_key=="en" else "שיבוץ אצוות")
