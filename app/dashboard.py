@@ -406,7 +406,7 @@ if page == "📋 שיבוץ אצוות":
         st.subheader("All Batches" if lang_key=="en" else "כל האצוות")
         batches_db = load_batches_db()
         if len(batches_db) > 0:
-            show_planned = st.checkbox("הצג רק מתוכננות", value=False)
+            show_planned = st.checkbox("Show planned only" if lang_key=="en" else "הצג רק מתוכננות", value=False)
             if show_planned and 'is_planned' in batches_db.columns:
                 display = batches_db[batches_db['is_planned']==True]
             else:
@@ -733,7 +733,7 @@ elif page == "📅 גאנט":
         all_gh = sorted(df_valid['חממה'].unique()) if len(df_valid)>0 else []
         selected_gh_gantt = st.multiselect("Filter by Greenhouse" if lang_key=="en" else "סנן לפי חממה", all_gh, default=all_gh)
     with col2:
-        view_mode = st.radio("View" if lang_key=="en" else "תצוגה", ["Active + Future", "All", "Past Only"] if lang_key=="en" else ["פעיל + עתידי", "הכל", "עבר בלבד"], horizontal=True, index=0)
+        view_mode = st.radio("View" if lang_key=="en" else "תצוגה", ["Active + Future", "All", "Past Only"] if lang_key=="en" else ["פעיל + עתידי", "הכל", "Past Only" if lang_key=="en" else "עבר בלבד"], horizontal=True, index=0)
     with col3:
         all_strains_g = sorted(df_valid['זן'].unique()) if len(df_valid)>0 else []
         selected_strain = st.multiselect("Filter by Strain" if lang_key=="en" else "סנן לפי זן", all_strains_g, default=[])
@@ -744,7 +744,7 @@ elif page == "📅 גאנט":
 
     if view_mode in ["פעיל + עתידי", "Active + Future"] and 'end' in filtered_gantt.columns:
         filtered_gantt = filtered_gantt[filtered_gantt['end'] >= today]
-    elif view_mode in ["עבר בלבד", "Past Only"]:
+    elif view_mode in ["Past Only" if lang_key=="en" else "עבר בלבד", "Past Only"]:
         filtered_gantt = filtered_gantt[filtered_gantt['end'] < today]
 
     st.markdown(f"**Showing {len(filtered_gantt)} batches**" if lang_key=="en" else f"**מציג {len(filtered_gantt)} אצוות**")
