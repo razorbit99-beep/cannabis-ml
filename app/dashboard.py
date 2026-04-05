@@ -209,9 +209,7 @@ if lang_key == "en":
     p, li { direction: ltr !important; text-align: left !important; }
     input { direction: ltr !important; text-align: left !important; }
     [data-baseweb="select"] { direction: ltr !important; }
-    [data-testid="stHorizontalBlock"] { direction: ltr !important; }
-    [data-testid="column"] { direction: ltr !important; text-align: left !important; }
-    [data-testid="stColumn"] { direction: ltr !important; text-align: left !important; }
+
     [data-baseweb="input"] { direction: ltr !important; text-align: left !important; }
     </style>""", unsafe_allow_html=True)
 
