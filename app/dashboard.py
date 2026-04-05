@@ -700,9 +700,9 @@ elif page == "📊 ניתוח נתונים":
 
 elif page == "📅 גאנט":
     if lang_key=="en":
-    st.markdown('<h3 style="text-align:left">Flowering Gantt</h3>', unsafe_allow_html=True)
-else:
-    st.subheader("גאנט הפרחה")
+        st.markdown('<h3 style="text-align:left">Flowering Gantt</h3>', unsafe_allow_html=True)
+    else:
+        st.subheader("גאנט הפרחה")
     st.markdown("---")
 
     supabase_gantt = get_supabase()
@@ -792,9 +792,9 @@ else:
 
         st.markdown("---")
         if lang_key=="en":
-    st.markdown('<h3 style="text-align:left">Summary</h3>', unsafe_allow_html=True)
-else:
-    st.subheader("סיכום")
+        st.markdown('<h3 style="text-align:left">Summary</h3>', unsafe_allow_html=True)
+    else:
+        st.subheader("סיכום")
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Active/Future" if lang_key=="en" else "פעיל/עתידי", len(filtered_gantt[filtered_gantt['end'] >= today]))
