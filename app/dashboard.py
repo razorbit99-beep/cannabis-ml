@@ -1,24 +1,11 @@
 import streamlit as st
+from supabase import create_client
 import pandas as pd
 import numpy as np
 import plotly.express as px
 from datetime import datetime, timedelta
 import os
 import joblib
-import os
-
-# חיבור ל-Supabase
-@st.cache_resource
-def get_supabase():
-    try:
-        from supabase import create_client
-        url = st.secrets.get("SUPABASE_URL", "https://gcfqucqiyggpaeuuurtl.supabase.co")
-        key = st.secrets.get("SUPABASE_KEY", "")
-        if key:
-            return create_client(url, key)
-    except:
-        pass
-    return None
 
 st.set_page_config(
     page_title="מערכת חיזוי הפרחה - קנאביס",
@@ -27,57 +14,294 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# ─── Global: hide Streamlit's top bar & footer on every screen ───────────────
 st.markdown("""
 <style>
-    body { direction: rtl; }
-    .main { direction: rtl; }
-    .stApp { background-color: #f8f9fa; }
-    h1, h2, h3 { text-align: right; color: #1a3a1e; }
-    .stMetric { direction: rtl; }
-    .stMetric label { color: #2d6a4f !important; }
-    .stMetric [data-testid="metric-container"] { 
-        background: #ffffff;
-        border: 1px solid #c8a951;
-        border-radius: 10px;
-        padding: 10px;
-        box-shadow: 0 2px 8px rgba(200,169,81,0.15);
-    }
-    [data-testid="stSidebar"] { 
-        background-color: #1a3a1e;
-    }
-    [data-testid="stSidebar"] * { color: #ffffff; }
-    [data-testid="stSidebar"] .stRadio label { color: #ffffff !important; }
-    .stButton > button {
-        background: linear-gradient(135deg, #2d6a4f, #1a3a1e);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-weight: bold;
-        padding: 8px 20px;
-    }
-    .stButton > button:hover {
-        background: linear-gradient(135deg, #40916c, #2d6a4f);
-        box-shadow: 0 4px 12px rgba(45,106,79,0.3);
-    }
-    .stSelectbox label { color: #2d6a4f !important; font-weight: 500; }
-    .stMultiSelect label { color: #2d6a4f !important; font-weight: 500; }
-    .stMultiSelect span[data-baseweb="tag"] { display: none !important; }
-    .stRadio label { color: #2d6a4f !important; font-weight: 500; }
-    .stSlider label { color: #2d6a4f !important; font-weight: 500; }
-    .stTextInput label { color: #2d6a4f !important; font-weight: 500; }
-    .stDateInput label { color: #2d6a4f !important; font-weight: 500; }
-    .stCheckbox label { color: #2d6a4f !important; }
-    .stDataFrame { border: 1px solid #c8a951; border-radius: 8px; }
-    .stAlert { border-radius: 8px; }
-    hr { border-color: #c8a951; opacity: 0.5; }
-    .stInfo { background: #e8f5e9; border-left: 4px solid #2d6a4f; }
-    .stSuccess { background: #e8f5e9; border-left: 4px solid #2d6a4f; }
+[data-testid="stHeader"],
+[data-testid="stToolbar"],
+header { display: none !important; height: 0 !important; }
+#MainMenu, footer { display: none !important; }
+input { border-radius: 8px !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# לוגו וכותרת
+# ─── Session state ────────────────────────────────────────────────────────────
+if "org_verified" not in st.session_state:
+    st.session_state.org_verified = False
+if "org_id" not in st.session_state:
+    st.session_state.org_id = None
+if "org_name" not in st.session_state:
+    st.session_state.org_name = None
+if "user" not in st.session_state:
+    st.session_state.user = None
+if "lang" not in st.session_state:
+    st.session_state.lang = "he"
 
-st.markdown("<hr style='border-color:#2d6a4f;margin:10px 0 20px 0'>", unsafe_allow_html=True)
+@st.cache_resource
+def get_supabase():
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_KEY"],
+    )
+
+supabase = get_supabase()
+
+# ─── ORG CODE SCREEN (popup card) ─────────────────────────────────────────────
+if not st.session_state.org_verified:
+
+    st.markdown("""
+    <style>
+    /* Dark gradient background — the "backdrop" behind the popup */
+    .stApp {
+        background: linear-gradient(160deg, #0a1f10 0%, #1a4429 55%, #0a1f10 100%) !important;
+    }
+
+    /* Narrow the page to popup width and push it down nicely */
+    .main .block-container {
+        max-width: 420px !important;
+        padding-top: 18vh !important;
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+        margin: 0 auto !important;
+    }
+
+    /* st.form creates a real HTML container — style it as the popup card */
+    [data-testid="stForm"] {
+        background: #ffffff !important;
+        border-radius: 20px !important;
+        padding: 36px 32px 28px !important;
+        box-shadow:
+            0 2px 8px rgba(0,0,0,0.12),
+            0 12px 32px rgba(0,0,0,0.25),
+            0 24px 80px rgba(0,0,0,0.45) !important;
+        border: none !important;
+        outline: none !important;
+    }
+
+    /* Make sure input is always clickable */
+    [data-testid="stForm"] input,
+    [data-testid="stForm"] .stTextInput,
+    [data-testid="stForm"] .stTextInput > div,
+    [data-testid="stForm"] .stTextInput > div > div {
+        pointer-events: auto !important;
+        cursor: text !important;
+    }
+
+    /* Input inside the card */
+    [data-testid="stForm"] .stTextInput > div > div > input {
+        border-radius: 10px !important;
+        border: 1.5px solid #d8e8de !important;
+        padding: 10px 14px !important;
+        font-size: 15px !important;
+        direction: rtl !important;
+        text-align: right !important;
+        background: #f8fcfa !important;
+        transition: border-color 0.2s, box-shadow 0.2s !important;
+    }
+    [data-testid="stForm"] .stTextInput > div > div > input:focus {
+        border-color: #2d6a4f !important;
+        box-shadow: 0 0 0 3px rgba(45,106,79,0.14) !important;
+        background: #fff !important;
+    }
+
+    /* Submit button */
+    [data-testid="stForm"] [data-testid="stFormSubmitButton"] > button {
+        background: linear-gradient(135deg, #2d6a4f 0%, #1a3a1e 100%) !important;
+        color: #fff !important;
+        border: none !important;
+        border-radius: 10px !important;
+        height: 46px !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+        width: 100% !important;
+        letter-spacing: 0.3px !important;
+        margin-top: 6px !important;
+        transition: all 0.2s ease !important;
+    }
+    [data-testid="stForm"] [data-testid="stFormSubmitButton"] > button:hover {
+        box-shadow: 0 6px 20px rgba(45,106,79,0.45) !important;
+        transform: translateY(-1px) !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    with st.form("org_form"):
+        st.markdown("""
+        <div style="text-align:center; margin-bottom:26px; direction:rtl;">
+            <div style="font-size:52px; line-height:1; margin-bottom:12px;">🌿</div>
+            <h2 style="color:#1a3a1e; font-weight:700; font-size:1.45em; margin:0 0 4px;">
+                ברוכים הבאים
+            </h2>
+            <p style="color:#6b9e7e; font-size:11px; letter-spacing:2.5px;
+                      text-transform:uppercase; margin:0 0 14px; font-weight:600;">
+                MY GREEN FIELDS
+            </p>
+            <p style="color:#777; font-size:14px; margin:0;">
+                הזיני קוד ארגון כדי להמשיך
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        org_code_input = st.text_input(
+            "קוד ארגון",
+            placeholder="הזן קוד ארגון...",
+            label_visibility="collapsed"
+        )
+        submitted = st.form_submit_button("המשך  ←", use_container_width=True)
+
+        if submitted:
+            if not org_code_input.strip():
+                st.error("יש להזין קוד ארגון")
+            else:
+                org = (
+                    supabase.table("organizations")
+                    .select("*")
+                    .eq("org_code", org_code_input.strip())
+                    .execute()
+                )
+                if len(org.data) == 0:
+                    st.error("קוד ארגון לא תקין")
+                else:
+                    st.session_state.org_verified = True
+                    st.session_state.org_id = org.data[0]["id"]
+                    st.session_state.org_name = org.data[0]["name"]
+                    st.rerun()
+
+    st.stop()
+
+# ─── CSS for Login screen + Main app (runs only after org is verified) ────────
+st.markdown("""
+<style>
+.stApp {
+    background: #f5f6f7;
+}
+
+.block-container {
+    max-width: 1000px;
+    margin: auto;
+    padding-top: 6vh;
+}
+
+.fake-card {
+    background: #ffffff;
+    padding: 24px;
+    border-radius: 14px;
+    border: 1px solid rgba(0,0,0,0.08);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+    max-width: 420px;
+    margin: auto;
+}
+
+.block-title {
+    text-align: center;
+}
+
+.stButton > button {
+    width: 100%;
+    height: 42px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+</style>
+""", unsafe_allow_html=True)
+
+TEXTS_LOGIN = {
+    "he": {
+        "system_name": "מערכת ניהול וחיזוי הפרחה",
+        "email": "אימייל",
+        "password": "סיסמה",
+        "login": "התחבר",
+        "signup": "צור משתמש",
+        "switch_org": "החלף ארגון",
+        "login_success": "התחברת בהצלחה",
+        "login_error": "שגיאת התחברות",
+        "signup_success": "המשתמש נוצר בהצלחה",
+        "signup_error": "שגיאה ביצירת משתמש"
+    },
+    "en": {
+        "system_name": "Flowering Management & Prediction System",
+        "email": "Email",
+        "password": "Password",
+        "login": "Login",
+        "signup": "Sign up",
+        "switch_org": "Switch Org",
+        "login_success": "Logged in successfully",
+        "login_error": "Login failed",
+        "signup_success": "User created successfully",
+        "signup_error": "Signup failed"
+    }
+}
+
+login_lang = st.selectbox(
+    "Language / שפה",
+    ["he", "en"],
+    index=0 if st.session_state.lang == "he" else 1,
+    format_func=lambda x: "עברית" if x == "he" else "English"
+)
+st.session_state.lang = login_lang
+t_login = TEXTS_LOGIN[login_lang]
+
+if st.session_state.user is None:
+    left, center, right = st.columns([1, 2, 1])
+
+    with center:
+        st.markdown('<div class="fake-card">', unsafe_allow_html=True)
+
+        try:
+            logo_left, logo_center, logo_right = st.columns([1, 2, 1])
+            with logo_center:
+                st.image("app/logo.png", width=110)
+        except:
+            st.markdown("<div style='text-align:center;font-size:42px;'>🌿</div>", unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <h1 style="text-align:center; color:#c8a951; margin-bottom:8px;">
+            MY GREEN FIELDS
+        </h1>
+        <p style="text-align:center; color:#2d6a4f; margin-bottom:22px;">
+            {t_login["system_name"]}
+        </p>
+        """, unsafe_allow_html=True)
+
+        email = st.text_input(t_login["email"])
+        password = st.text_input(t_login["password"], type="password")
+
+        btn1, btn2, btn3 = st.columns(3)
+
+        with btn1:
+            if st.button(t_login["login"], use_container_width=True):
+                try:
+                    res = supabase.auth.sign_in_with_password({
+                        "email": email,
+                        "password": password
+                    })
+                    st.session_state.user = res.user
+                    st.success(t_login["login_success"])
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"{t_login['login_error']}: {e}")
+
+        with btn2:
+            if st.button(t_login["signup"], use_container_width=True):
+                try:
+                    supabase.auth.sign_up({
+                        "email": email,
+                        "password": password
+                    })
+                    st.success(t_login["signup_success"])
+                except Exception as e:
+                    st.error(f"{t_login['signup_error']}: {e}")
+
+        with btn3:
+            if st.button(t_login["switch_org"], use_container_width=True):
+                st.session_state.org_verified = False
+                st.session_state.org_id = None
+                st.session_state.org_name = None
+                st.rerun()
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.stop()
 
 def find_file(filename, folders=['app', 'models', '.']):
     for folder in folders:
@@ -110,7 +334,7 @@ def get_season(month, lk='he'):
     return 'Fall' if lk=='en' else 'סתיו'
 
 def predict_ml(model, feature_cols, mapping, df, greenhouse, strain, start_date):
-    season = get_season(start_date.month, lang_key)
+    season = get_season(start_date.month, st.session_state.lang)
     greenhouses = mapping['חממות']
     strains = mapping['זנים']
     seasons = mapping['עונות']
@@ -213,21 +437,6 @@ if lang_key == "en":
     [data-baseweb="input"] { direction: ltr !important; text-align: left !important; }
     </style>""", unsafe_allow_html=True)
 
-col_logo, col_title = st.columns([1, 4])
-with col_logo:
-    try:
-        st.image('app/logo_white.png', width=120)
-    except:
-        st.write("🌿")
-with col_title:
-    subtitle = "Flowering Management System" if lang_key=="en" else "מערכת ניהול וחיזוי הפרחה"
-    st.markdown(f"""
-    <div style="padding-top:15px;text-align:center">
-        <h2 style="color:#c8a951;margin:0;font-family:serif;">My Green Fields</h2>
-        <p style="color:#a8d5a2;margin:0;font-size:14px;text-align:{"left" if lang_key=="en" else "right"}">{subtitle}</p>
-    </div>
-    """, unsafe_allow_html=True)
-
 st.sidebar.title("🌿 " + T["title"])
 st.sidebar.markdown("---")
 if gb is not None:
@@ -263,9 +472,9 @@ if page == "📋 שיבוץ אצוות":
     else:
         st.subheader("שיבוץ אצוות")
     st.markdown("---")
-    
+
     supabase = get_supabase()
-    
+
     # טעינת אצוות מ-Supabase
     @st.cache_data(ttl=30)
     def load_batches_db():
@@ -280,7 +489,7 @@ if page == "📋 שיבוץ אצוות":
                      'תאריך תחילת הפרחה':'start_date','תאריך סיום הפרחה':'end_date','סה״כ ימים בהפרחה':'total_days'})
 
     tab1, tab2, tab3 = st.tabs(["➕ Add Batch", "📋 Existing Batches", "🔄 Update/Delete"] if lang_key=="en" else ["➕ הוספת אצווה", "📋 אצוות קיימות", "🔄 עדכון/מחיקה"])
-    
+
     with tab1:
         if lang_key=="en":
             st.markdown('<h3 style="text-align:left">Add New Batch</h3>', unsafe_allow_html=True)
@@ -294,13 +503,13 @@ if page == "📋 שיבוץ אצוות":
                 filtered_strains = [s for s in all_strains_list if strain_search.upper() in s.upper()]
             else:
                 filtered_strains = all_strains_list
-            
+
             if filtered_strains:
                 new_strain = st.selectbox("Select Strain" if lang_key=="en" else "בחר זן", filtered_strains, key='new_strain')
             else:
                 st.warning("לא נמצא זן - תוכל להוסיף זן חדש למטה")
                 new_strain = strain_search.upper()
-            
+
             # הוספת זן חדש
             with st.expander("➕ Add New Strain" if lang_key=="en" else "➕ הוסף זן חדש"):
                 new_strain_name = st.text_input("שם הזן החדש (עד 5 תווים)", max_chars=5).upper()
@@ -311,7 +520,7 @@ if page == "📋 שיבוץ אצוות":
             new_gh = st.selectbox("Greenhouse" if lang_key=="en" else "חממה", sorted(df['חממה'].unique()), key='new_gh')
         with col3:
             new_date = st.date_input("Entry Date" if lang_key=="en" else "תאריך כניסה", datetime.today(), key='new_date')
-        
+
         # בדיקת זמינות
         batches_db = load_batches_db()
         if len(batches_db) > 0 and 'start_date' in batches_db.columns:
@@ -338,15 +547,15 @@ if page == "📋 שיבוץ אצוות":
                         exp = f" | {len(hist)} אצוות עם הזן" if len(hist)>0 else " | אין ניסיון עם הזן"
                         st.success(f"✅ Greenhouse {gh} available{exp}" if lang_key=="en" else f"✅ חממה {gh} פנויה{exp}")
             else:
-                st.success(f"✅ Greenhouse {new_gh} available on this date!" if lang_key=="en" else f"✅ Greenhouse {new_gh} available on this date!" if lang_key=="en" else f"✅ חממה {new_gh} פנויה בתאריך זה!")
-        
+                st.success(f"✅ Greenhouse {new_gh} available on this date!" if lang_key=="en" else f"✅ חממה {new_gh} פנויה בתאריך זה!")
+
         # חיזוי ימי הפרחה
         hist_match = df[(df['חממה']==new_gh)&(df['זן']==new_strain)]['סה״כ ימים בהפרחה']
         predicted_days = round(hist_match.mean() if len(hist_match)>0 else df['סה״כ ימים בהפרחה'].mean(), 1)
         end_date_pred = datetime.combine(new_date, datetime.min.time()) + timedelta(days=predicted_days)
-        
+
         st.info(f"⏱️ Prediction: {predicted_days} flowering days | Est. harvest: {end_date_pred.strftime('%d/%m/%Y')}")
-        
+
         # המלצת חממות
         st.markdown("---")
         if lang_key=="en":
@@ -393,14 +602,14 @@ if page == "📋 שיבוץ אצוות":
         year_2 = str(new_date.year)[2:]
         strain_code = new_strain[:3].upper()
         batches_now = load_batches_db()
-        existing = [b for b in (batches_now["batch_id"].tolist() if len(batches_now)>0 else []) 
+        existing = [b for b in (batches_now["batch_id"].tolist() if len(batches_now)>0 else [])
                    if f"Z{new_gh}" in str(b) and year_2 in str(b)]
         next_num = len(existing) + 1
         auto_batch_id = f"G{strain_code}{year_2}{week_num:02d}Z{new_gh}{next_num}"
         st.info(f"Batch ID: **{auto_batch_id}**")
         st.caption(f"G=Farm | {strain_code}=Strain | {year_2}=Yr | {week_num:02d}=Wk | Z{new_gh}=GH | {next_num}=Seq" if lang_key=="en" else f"G=חווה | {strain_code}=זן | {year_2}=שנה | {week_num:02d}=שבוע | Z{new_gh}=חממה | {next_num}=סידורי")
         new_batch_id = st.text_input("Manual override (optional)" if lang_key=="en" else "שינוי ידני (אופציונלי)", value=auto_batch_id)
-        
+
         if st.button("➕ Assign Batch" if lang_key=="en" else "➕ שבץ אצווה", use_container_width=True):
             if supabase:
                 try:
@@ -422,7 +631,7 @@ if page == "📋 שיבוץ אצוות":
                     st.error(f"Connection error: {e}" if lang_key=="en" else f"שגיאה: {e}")
             else:
                 st.error("אין חיבור למסד נתונים")
-    
+
     with tab2:
         if lang_key=="en":
             st.markdown('<h3 style="text-align:left">All Batches</h3>', unsafe_allow_html=True)
@@ -437,7 +646,7 @@ if page == "📋 שיבוץ אצוות":
                 display = batches_db
             st.dataframe(display[['batch_id','strain','greenhouse','start_date','end_date','total_days']].head(50),
                         use_container_width=True, hide_index=True)
-    
+
     with tab3:
         if lang_key=="en":
             st.markdown('<h3 style="text-align:left">Update or Delete Batch</h3>', unsafe_allow_html=True)
@@ -453,9 +662,9 @@ if page == "📋 שיבוץ אצוות":
                 format_func=lambda x: ("Enter batch ID..." if lang_key=="en" else "הכנס מספר אצווה...") if x == "" else x
             )
             action = st.radio("Action" if lang_key=="en" else "פעולה", ["Delete", "Update End Date"] if lang_key=="en" else ["מחיקה", "עדכון תאריך סיום"], horizontal=False)
-            
+
             if action in ["מחיקה", "Delete"]:
-                if st.button("Delete Batch" if lang_key=="en" else "Delete Batch" if lang_key=="en" else "מחק אצווה", type="primary"):
+                if st.button("Delete Batch" if lang_key=="en" else "מחק אצווה", type="primary"):
                     if supabase:
                         try:
                             supabase.table('batches').delete().eq('batch_id', selected_batch).execute()
@@ -489,34 +698,28 @@ if page == "🏆 המלצת חממה":
     if st.button("🏆 מצא חממה מומלצת", use_container_width=True):
         st.markdown("---")
 
-        # חישוב ביצועי כל חממה עם הזן הזה
         results = []
         all_gh = sorted(df['חממה'].unique())
 
         for gh in all_gh:
-            # ביצועי הזן בחממה זו
             strain_in_gh = df[(df['חממה'] == gh) & (df['זן'] == strain_rec)]
             all_in_gh = df[df['חממה'] == gh]
 
-            # מספר אצוות של הזן בחממה
             n_strain = len(strain_in_gh)
 
-            # ממוצע ימי הפרחה של הזן בחממה
             if n_strain > 0:
                 avg_days = strain_in_gh['סה״כ ימים בהפרחה'].mean()
                 std_days = strain_in_gh['סה״כ ימים בהפרחה'].std()
                 if pd.isna(std_days): std_days = 0
-                experience_score = min(n_strain * 15, 40)  # ניסיון - עד 40 נקודות
-                stability_score = max(0, 30 - std_days * 2)  # יציבות - עד 30 נקודות
+                experience_score = min(n_strain * 15, 40)
+                stability_score = max(0, 30 - std_days * 2)
             else:
-                # אין ניסיון עם הזן - משתמשים בממוצע החממה
                 avg_days = all_in_gh['סה״כ ימים בהפרחה'].mean() if len(all_in_gh) > 0 else 46
                 std_days = all_in_gh['סה״כ ימים בהפרחה'].std() if len(all_in_gh) > 0 else 5
                 if pd.isna(std_days): std_days = 0
                 experience_score = 0
                 stability_score = max(0, 20 - std_days * 2)
 
-            # בדיקת זמינות בגאנט
             df_gantt_check = df.copy()
             df_gantt_check['תאריך תחילת הפרחה'] = pd.to_datetime(df_gantt_check['תאריך תחילת הפרחה'], errors='coerce')
             df_gantt_check['תאריך סיום'] = df_gantt_check['תאריך תחילת הפרחה'] + pd.to_timedelta(df_gantt_check['סה״כ ימים בהפרחה'], unit='D')
@@ -529,7 +732,6 @@ if page == "🏆 המלצת חממה":
             is_available = len(active_in_gh) == 0
             availability_score = 30 if is_available else 0
 
-            # ציון כולל
             total_score = experience_score + stability_score + availability_score
 
             results.append({
@@ -543,7 +745,6 @@ if page == "🏆 המלצת חממה":
 
         results_df = pd.DataFrame(results).sort_values('ציון התאמה', ascending=False)
 
-        # הצגת המלצה ראשית
         best = results_df.iloc[0]
         st.markdown(f"""
         <div style="background: #e8f5e9; padding: 20px; border-radius: 12px; border: 1px solid #2d6a4f; text-align: center; margin-bottom: 20px;">
@@ -553,7 +754,6 @@ if page == "🏆 המלצת חממה":
         </div>
         """, unsafe_allow_html=True)
 
-        # גרף ציונים
         fig = px.bar(results_df, x='חממה', y='ציון התאמה',
                      color='ציון התאמה', color_continuous_scale=['#f5c0b8','#f5e6a0','#b8ddb8'],
                      title=f"ציון התאמה לפי חממה - זן {strain_rec}",
@@ -562,7 +762,6 @@ if page == "🏆 המלצת חממה":
         fig.update_layout(coloraxis_showscale=False, yaxis_range=[0, 105], paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=0.0 if lang_key=='en' else 1.0, title_xanchor='left' if lang_key=='en' else 'right')
         st.plotly_chart(fig, use_container_width=True)
 
-        # טבלה מפורטת
         if lang_key=="en":
             st.markdown('<h3 style="text-align:left">Breakdown by Greenhouse</h3>', unsafe_allow_html=True)
         else:
@@ -670,7 +869,6 @@ elif page == "📊 ניתוח נתונים":
                                   default=sorted(df['חממה'].unique())[:3])
     filtered = df[df['חממה'].isin(selected_gh)] if selected_gh else df
 
-    # גרף 1 - ממוצע לפי חודש
     month_names = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May',6:'Jun',7:'Jul',8:'Aug',9:'Sep',10:'Oct',11:'Nov',12:'Dec'} if lang_key=='en' else {1:'ינואר',2:'פברואר',3:'מרץ',4:'אפריל',5:'מאי',6:'יוני',7:'יולי',8:'אוגוסט',9:'ספטמבר',10:'אוקטובר',11:'נובמבר',12:'דצמבר'}
     monthly = filtered.groupby('חודש_התחלה')['סה״כ ימים בהפרחה'].mean().reset_index()
     monthly['חודש'] = monthly['חודש_התחלה'].map(month_names)
@@ -683,7 +881,6 @@ elif page == "📊 ניתוח נתונים":
 
     col1, col2 = st.columns(2)
 
-    # גרף 2 - ממוצע לפי חממה
     with col1:
         gh_perf = filtered.groupby('חממה')['סה״כ ימים בהפרחה'].agg(['mean','count']).reset_index()
         gh_perf.columns = ['חממה', 'ממוצע ימים', 'מספר אצוות']
@@ -696,7 +893,6 @@ elif page == "📊 ניתוח נתונים":
         fig2.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=0.0 if lang_key=='en' else 1.0, title_xanchor='left' if lang_key=='en' else 'right')
         st.plotly_chart(fig2, use_container_width=True)
 
-    # גרף 3 - הזנים עם הכי הרבה אצוות
     with col2:
         strain_perf = filtered.groupby('זן')['סה״כ ימים בהפרחה'].agg(['mean','count']).reset_index()
         strain_perf.columns = ['זן', 'ממוצע ימים', 'מספר אצוות']
@@ -709,7 +905,6 @@ elif page == "📊 ניתוח נתונים":
         fig3.update_layout(coloraxis_showscale=False, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=0.0 if lang_key=='en' else 1.0, title_xanchor='left' if lang_key=='en' else 'right')
         st.plotly_chart(fig3, use_container_width=True)
 
-    # טבלה נקייה
     if lang_key=="en":
         st.markdown('<h3 style="text-align:left">Data Table</h3>', unsafe_allow_html=True)
     else:
@@ -763,7 +958,7 @@ elif page == "📅 גאנט":
         all_gh = sorted(df_valid['חממה'].unique()) if len(df_valid)>0 else []
         selected_gh_gantt = st.multiselect("Filter by Greenhouse" if lang_key=="en" else "סנן לפי חממה", all_gh, default=all_gh)
     with col2:
-        view_mode = st.radio("View" if lang_key=="en" else "תצוגה", ["Active + Future", "All", "Past Only"] if lang_key=="en" else ["פעיל + עתידי", "הכל", "Past Only" if lang_key=="en" else "עבר בלבד"], horizontal=True, index=0)
+        view_mode = st.radio("View" if lang_key=="en" else "תצוגה", ["Active + Future", "All", "Past Only"] if lang_key=="en" else ["פעיל + עתידי", "הכל", "עבר בלבד"], horizontal=True, index=0)
     with col3:
         all_strains_g = sorted(df_valid['זן'].unique()) if len(df_valid)>0 else []
         selected_strain = st.multiselect("Filter by Strain" if lang_key=="en" else "סנן לפי זן", all_strains_g, default=[])
@@ -774,7 +969,7 @@ elif page == "📅 גאנט":
 
     if view_mode in ["פעיל + עתידי", "Active + Future"] and 'end' in filtered_gantt.columns:
         filtered_gantt = filtered_gantt[filtered_gantt['end'] >= today]
-    elif view_mode in ["Past Only" if lang_key=="en" else "עבר בלבד", "Past Only"]:
+    elif view_mode in ["עבר בלבד", "Past Only"]:
         filtered_gantt = filtered_gantt[filtered_gantt['end'] < today]
 
     st.markdown(f"**Showing {len(filtered_gantt)} batches**" if lang_key=="en" else f"**מציג {len(filtered_gantt)} אצוות**")
@@ -782,7 +977,6 @@ elif page == "📅 גאנט":
     if len(filtered_gantt) == 0:
         st.warning("אין אצוות להצגה בטווח זה")
     else:
-        # יצירת שורות נפרדות לאצוות חופפות
         filtered_gantt = filtered_gantt.sort_values(['חממה','start'])
         filtered_gantt['שורה'] = ''
         for gh in filtered_gantt['חממה'].unique():
@@ -817,7 +1011,7 @@ elif page == "📅 גאנט":
         fig.add_vline(x=today_str, line_dash="dash", line_color="#2d6a4f", line_width=1.5)
         fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=0.0 if lang_key=='en' else 1.0, title_xanchor='left' if lang_key=='en' else 'right', margin=dict(l=10,r=10,t=40,b=10))
         fig.update_yaxes(categoryorder='category ascending')
-        fig.update_layout(height=550, xaxis_title='Date' if lang_key=='en' else 'תאריך', yaxis_title='Greenhouse' if lang_key=='en' else 'חממה', legend_title_text='Strain' if lang_key=='en' else 'זן', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=0.0 if lang_key=='en' else 1.0, title_xanchor='left' if lang_key=='en' else 'right')
+        fig.update_layout(height=550, xaxis_title='Date' if lang_key=='en' else 'תאריך', yaxis_title='Greenhouse' if lang_key=='en' else 'חממה', legend_title_text='Strain' if lang_key=='en' else 'זן')
         st.plotly_chart(fig, use_container_width=True)
 
         st.markdown("---")
