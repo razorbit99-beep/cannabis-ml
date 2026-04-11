@@ -820,7 +820,7 @@ if page == "📋 שיבוץ אצוות":
         with tc2:
             cleaning_days = st.select_slider(
                 "🧹 " + ("Cleaning / Sanitation" if lang_key=="en" else "ניקוי / ביון"),
-                options=[1, 2, 3], value=1, key='cleaning_days'
+                options=[1, 2, 3], value=3, key='cleaning_days'
             )
         with tc3:
             transfer_days = st.select_slider(
@@ -1467,8 +1467,17 @@ elif page == "📅 גאנט":
             raw['חממה'] = raw['greenhouse']
             raw['מספר אצווה'] = raw['batch_id']
             raw['סה״כ ימים'] = raw['total_days']
-            raw['סוג'] = raw['is_planned'].apply(lambda x: ('📋 Planned' if lang_key=='en' else '📋 מתוכנן') if x else ('✅ Historical' if lang_key=='en' else '✅ היסטורי'))
-            raw.loc[raw['ended_early']==True, 'סוג'] = '⚡ סיים מוקדם' if lang_key=='he' else '⚡ Early finish'
+            def _batch_status(row, today_ts, lk):
+                if row.get('ended_early', False):
+                    return '⚡ סיים מוקדם' if lk=='he' else '⚡ Early finish'
+                s = pd.to_datetime(row.get('start_date'), errors='coerce')
+                e = pd.to_datetime(str(row.get('end_date',''))[:10], errors='coerce')
+                if pd.notna(s) and pd.notna(e) and s <= today_ts <= e:
+                    return '🌿 פעיל' if lk=='he' else '🌿 Active'
+                if pd.notna(e) and e < today_ts:
+                    return '✅ הסתיים' if lk=='he' else '✅ Done'
+                return '📋 מתוכנן' if lk=='he' else '📋 Planned'
+            raw['סוג'] = raw.apply(lambda r: _batch_status(r, pd.Timestamp.today(), lang_key), axis=1)
             df_valid = raw.dropna(subset=['start','end']).copy()
             df_valid = df_valid[df_valid['start'] >= '2023-01-01']
         except Exception as e:
@@ -1604,11 +1613,17 @@ elif page == "📅 גאנט":
 
         all_gantt = pd.concat([filtered_gantt, pd.DataFrame(transition_rows)], ignore_index=True) if transition_rows else filtered_gantt.copy()
 
-        # ─── בניית גרף ───────────────────────────────────────────────────────────
-        STRAIN_COLORS = ['#4e9af1','#52c77d','#f59e42','#b06ee8','#e8567a','#3dcfcf','#f2c94c','#6fcf97','#eb5757','#9b51e0','#27ae60','#2980b9']
-        all_strains_uniq = [s for s in all_gantt['זן'].unique() if s not in ['🌾 קציר','🌾 Harvest','🧹 ניקוי','🧹 Cleaning','🌱 העברה','🌱 Transfer']]
+        # ─── צבעים וגרף ──────────────────────────────────────────────────────────
+        TRANSITION_TYPES = ['🌾 קציר','🌾 Harvest','🧹 ניקוי','🧹 Cleaning','🌱 העברה','🌱 Transfer']
+        STRAIN_COLORS = ['#2563eb','#16a34a','#9333ea','#dc2626','#0891b2','#d97706','#be185d','#065f46','#7c3aed','#b45309']
+        all_strains_uniq = [s for s in all_gantt['זן'].unique() if s not in TRANSITION_TYPES]
         color_map = {s: STRAIN_COLORS[i % len(STRAIN_COLORS)] for i,s in enumerate(all_strains_uniq)}
-        color_map.update({'🌾 קציר':'#f5c842','🌾 Harvest':'#f5c842','🧹 ניקוי':'#c8c8c8','🧹 Cleaning':'#c8c8c8','🌱 העברה':'#8ee8a0','🌱 Transfer':'#8ee8a0'})
+        color_map.update({'🌾 קציר':'#eab308','🌾 Harvest':'#eab308',
+                          '🧹 ניקוי':'#94a3b8','🧹 Cleaning':'#94a3b8',
+                          '🌱 העברה':'#4ade80','🌱 Transfer':'#4ade80'})
+
+        # גאנט — מיון Y לפי חממה
+        y_order = sorted(all_gantt['שורה'].unique())
 
         fig = px.timeline(
             all_gantt, x_start='start', x_end='end', y='שורה', color='זן',
@@ -1616,81 +1631,124 @@ elif page == "📅 גאנט":
             custom_data=['מספר אצווה','זן','חממה','סוג','THCA צפוי','קציר מוקדם','קציר מאוחר','סיום מתוכנן','נותר']
         )
 
-        # ─── Hover template מפורט ────────────────────────────────────────────────
-        is_transition = all_gantt['זן'].isin(['🌾 קציר','🌾 Harvest','🧹 ניקוי','🧹 Cleaning','🌱 העברה','🌱 Transfer'])
+        # ─── Hover template ───────────────────────────────────────────────────────
+        lbl_strain  = "Strain"    if lang_key=="en" else "זן"
+        lbl_gh      = "Greenhouse" if lang_key=="en" else "חממה"
+        lbl_start   = "Start"     if lang_key=="en" else "תחילת הפרחה"
+        lbl_harvest = "Est. Harvest" if lang_key=="en" else "קציר משוער"
+        lbl_range   = "Range ±σ"  if lang_key=="en" else "טווח ±σ"
+        lbl_remain  = "Remaining" if lang_key=="en" else "נותר"
+        lbl_status  = "Status"    if lang_key=="en" else "סטטוס"
+
         for trace in fig.data:
-            t_name = trace.name
-            if t_name in ['🌾 קציר','🌾 Harvest','🧹 ניקוי','🧹 Cleaning','🌱 העברה','🌱 Transfer']:
-                trace.hovertemplate = (
-                    "<b>%{customdata[0]}</b><br>"
-                    "📅 %{x}<br>"
-                    "<extra></extra>"
-                )
-                trace.marker.opacity = 0.65
+            if trace.name in TRANSITION_TYPES:
+                trace.hovertemplate = "<b>%{customdata[0]}</b><extra></extra>"
+                trace.marker.opacity = 0.7
                 trace.marker.line = dict(width=0)
             else:
                 trace.hovertemplate = (
-                    "<b style='font-size:1.1em'>📦 %{customdata[0]}</b><br>"
-                    "─────────────────────<br>"
-                    "🌿 " + ("זן" if lang_key=="he" else "Strain") + ": <b>%{customdata[1]}</b><br>"
-                    "🏠 " + ("חממה" if lang_key=="he" else "Greenhouse") + ": <b>%{customdata[2]}</b><br>"
-                    "📅 " + ("תחילת הפרחה" if lang_key=="he" else "Start") + ": <b>%{base|%d/%m/%Y}</b><br>"
-                    "🌾 " + ("קציר משוער" if lang_key=="he" else "Est. Harvest") + ": <b>%{customdata[7]}</b><br>"
-                    "📊 " + ("טווח (±σ)" if lang_key=="he" else "Range (±σ)") + ": %{customdata[5]} — %{customdata[6]}<br>"
-                    "🧪 THCA: <b>%{customdata[4]}%</b><br>"
-                    "⏳ " + ("נותר" if lang_key=="he" else "Remaining") + ": %{customdata[8]}<br>"
-                    "🏷 " + ("סטטוס" if lang_key=="he" else "Status") + ": %{customdata[3]}<br>"
+                    f"<b>📦 %{{customdata[0]}}</b><br>"
+                    f"{'─'*22}<br>"
+                    f"🌿 {lbl_strain}: <b>%{{customdata[1]}}</b><br>"
+                    f"🏠 {lbl_gh}: <b>%{{customdata[2]}}</b><br>"
+                    f"📅 {lbl_start}: <b>%{{base|%d/%m/%Y}}</b><br>"
+                    f"🌾 {lbl_harvest}: <b>%{{customdata[7]}}</b><br>"
+                    f"📊 {lbl_range}: %{{customdata[5]}} → %{{customdata[6]}}<br>"
+                    f"🧪 THCA: <b>%{{customdata[4]}}%</b><br>"
+                    f"⏳ {lbl_remain}: %{{customdata[8]}}<br>"
+                    f"🏷 {lbl_status}: %{{customdata[3]}}<br>"
                     "<extra></extra>"
                 )
-                trace.marker.opacity = 0.92
-                trace.marker.line = dict(color='rgba(255,255,255,0.4)', width=1)
+                trace.marker.opacity = 0.88
+                trace.marker.line = dict(color='rgba(255,255,255,0.5)', width=1.5)
+                # טקסט על הבר עצמו
+                trace.text = all_gantt.loc[all_gantt['זן']==trace.name, 'מספר אצווה'].values
+                trace.textposition = 'inside'
+                trace.insidetextfont = dict(color='white', size=10)
 
-        # ─── עיצוב כללי ──────────────────────────────────────────────────────────
+        # ─── רקעים מתחלפים לשורות ────────────────────────────────────────────────
+        for i, gh_row in enumerate(y_order):
+            fig.add_hrect(
+                y0=i-0.5, y1=i+0.5,
+                fillcolor='#f0f9f4' if i % 2 == 0 else '#ffffff',
+                layer='below', line_width=0, opacity=1
+            )
+
+        # ─── קו "היום" ───────────────────────────────────────────────────────────
         today_str = datetime.today().strftime('%Y-%m-%d')
-        fig.add_vline(x=today_str, line_dash="dot", line_color="#e05c2d", line_width=2)
+        fig.add_vline(x=today_str, line_dash="dash", line_color="#ef4444", line_width=2)
+
+        # ─── layout מקצועי ───────────────────────────────────────────────────────
+        n_rows = max(len(y_order), 1)
         fig.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='#fafffe',
-            font=dict(family="Segoe UI, Arial, sans-serif", color='#1a3a1e', size=12),
+            paper_bgcolor='white',
+            plot_bgcolor='white',
+            font=dict(family="'Segoe UI', Arial, sans-serif", size=12, color='#1e293b'),
             title=None,
-            margin=dict(l=5, r=10, t=15, b=10),
-            height=max(420, len(filtered_gantt['שורה'].unique()) * 52 + 80),
+            margin=dict(l=10, r=20, t=20, b=20),
+            height=max(300, n_rows * 56 + 120),
             xaxis=dict(
-                title=None, gridcolor='#e0ede8', gridwidth=1,
-                tickfont=dict(size=11), showgrid=True, zeroline=False
+                title=None,
+                showgrid=True, gridcolor='#e2e8f0', gridwidth=1,
+                tickfont=dict(size=11, color='#475569'),
+                tickformat='%b %d\n%Y',
+                zeroline=False,
+                side='top',          # תאריכים בראש הגרף כמו גאנט מקצועי
+                showline=True, linecolor='#cbd5e1', linewidth=1,
             ),
             yaxis=dict(
-                title=None, categoryorder='category ascending',
-                tickfont=dict(size=12, color='#1a3a1e'), gridcolor='#e0ede8'
+                title=None,
+                categoryorder='array', categoryarray=y_order,
+                tickfont=dict(size=13, color='#1e293b', family='monospace'),
+                showgrid=True, gridcolor='#e2e8f0',
+                showline=False,
+                autorange='reversed',   # חממה A בראש
             ),
             legend=dict(
-                title=dict(text="🌿 " + ("Strain" if lang_key=="en" else "זן"), font=dict(size=12)),
-                bgcolor='rgba(255,255,255,0.85)', bordercolor='#c8e0d0', borderwidth=1,
-                font=dict(size=11)
+                title=dict(text="  " + ("Strain" if lang_key=="en" else "זן  "), font=dict(size=12, color='#1e293b')),
+                bgcolor='rgba(255,255,255,0.95)', bordercolor='#cbd5e1', borderwidth=1,
+                font=dict(size=11), orientation='v',
+                x=1.01, y=1, xanchor='left'
             ),
             hoverlabel=dict(
-                bgcolor='#1a3a1e', font_color='#ffffff',
-                font_size=12, bordercolor='#52c77d'
-            )
+                bgcolor='#0f172a', font_color='#f8fafc',
+                font_size=12, bordercolor='#22c55e',
+                namelength=0
+            ),
+            bargap=0.3,
         )
-        if transition_rows:
-            st.caption("🌾 צהוב = קציר &nbsp;|&nbsp; 🧹 אפור = ניקוי &nbsp;|&nbsp; 🌱 ירוק = העברת שתילים &nbsp;|&nbsp; 🔴 קו מקווקו = היום" if lang_key=="he"
-                       else "🌾 Yellow=Harvest &nbsp;|&nbsp; 🧹 Grey=Cleaning &nbsp;|&nbsp; 🌱 Green=Transfer &nbsp;|&nbsp; 🔴 Dotted=Today")
+        # כיוון ציר X: משמאל לימין תמיד (זמן מתקדם שמאל לימין)
+        fig.update_xaxes(autorange=True)
+
+        # ─── legend מקרא בתחתית ──────────────────────────────────────────────────
         st.plotly_chart(fig, use_container_width=True)
+        legend_html = """
+        <div style="display:flex;gap:18px;align-items:center;padding:6px 10px;
+                    background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;
+                    font-size:0.82em;color:#475569;flex-wrap:wrap;margin-top:-8px;">
+          <span><span style="display:inline-block;width:14px;height:14px;background:#eab308;border-radius:3px;margin-right:4px;vertical-align:middle;"></span>""" + ("קציר" if lang_key=="he" else "Harvest") + """</span>
+          <span><span style="display:inline-block;width:14px;height:14px;background:#94a3b8;border-radius:3px;margin-right:4px;vertical-align:middle;"></span>""" + ("ניקוי" if lang_key=="he" else "Cleaning") + """</span>
+          <span><span style="display:inline-block;width:14px;height:14px;background:#4ade80;border-radius:3px;margin-right:4px;vertical-align:middle;"></span>""" + ("העברת שתילים" if lang_key=="he" else "Transfer") + """</span>
+          <span><span style="display:inline-block;width:2px;height:14px;background:#ef4444;margin-right:4px;vertical-align:middle;"></span>""" + ("היום" if lang_key=="he" else "Today") + """</span>
+        </div>"""
+        st.markdown(legend_html, unsafe_allow_html=True)
 
         # ─── טבלת אצוות פעילות כרגע ──────────────────────────────────────────────
         active_now = filtered_gantt[(filtered_gantt['start'] <= today) & (filtered_gantt['end'] >= today)].copy()
         if len(active_now) > 0:
-            st.markdown("""<div style="background:linear-gradient(90deg,#1a3a1e,#2d6a4f);border-radius:8px;
-                padding:8px 16px;margin:10px 0 6px;color:#fff;font-weight:600;font-size:1em;">
-                🌿 """ + ("Active Batches Now — Predicted Data" if lang_key=="en" else "אצוות פעילות כרגע — נתוני חיזוי") + """
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown(
+                f"""<div style="background:linear-gradient(90deg,#1e3a5f,#1e5f3a);border-radius:8px;
+                padding:8px 18px;color:#fff;font-weight:600;font-size:1em;margin-bottom:6px;">
+                🌿 {"Active Batches — Predicted Data" if lang_key=="en" else "אצוות פעילות כרגע — נתוני חיזוי"}
                 </div>""", unsafe_allow_html=True)
-            show_active = active_now[['מספר אצווה','חממה','זן','start','end','THCA צפוי','קציר מוקדם','קציר מאוחר','נותר','סוג']].copy()
-            show_active['start'] = show_active['start'].dt.strftime('%d/%m/%Y')
-            show_active['end']   = show_active['end'].dt.strftime('%d/%m/%Y')
+            show_cols = [c for c in ['מספר אצווה','חממה','זן','start','end','THCA צפוי','קציר מוקדם','קציר מאוחר','נותר','סוג'] if c in active_now.columns]
+            show_active = active_now[show_cols].copy()
+            if 'start' in show_active.columns: show_active['start'] = show_active['start'].dt.strftime('%d/%m/%Y')
+            if 'end'   in show_active.columns: show_active['end']   = show_active['end'].dt.strftime('%d/%m/%Y')
             show_active = show_active.rename(columns={
-                'start': 'תחילת הפרחה', 'end': 'סיום צפוי',
-                'קציר מוקדם': 'קציר מוקדם (−σ)', 'קציר מאוחר': 'קציר מאוחר (+σ)',
-                'נותר': 'ימים נותרים', 'סוג': 'סטטוס'
+                'start':'תחילת הפרחה','end':'סיום צפוי',
+                'קציר מוקדם':'קציר מוקדם (−σ)','קציר מאוחר':'קציר מאוחר (+σ)',
+                'נותר':'ימים נותרים','סוג':'סטטוס'
             })
             st.dataframe(show_active, use_container_width=True, hide_index=True)
