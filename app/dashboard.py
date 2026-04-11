@@ -6,6 +6,7 @@ import plotly.express as px
 from datetime import datetime, timedelta
 import os
 import joblib
+import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="מערכת חיזוי הפרחה - קנאביס",
@@ -22,6 +23,10 @@ st.markdown("""
 header { display: none !important; height: 0 !important; }
 #MainMenu, footer { display: none !important; }
 input { border-radius: 8px !important; }
+.main .block-container,
+[data-testid="stMainBlockContainer"] {
+    padding-top: 1rem !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -35,7 +40,13 @@ if "org_name" not in st.session_state:
 if "user" not in st.session_state:
     st.session_state.user = None
 if "lang" not in st.session_state:
-    st.session_state.lang = "he"
+    st.session_state.lang = "en"
+if "auth_mode" not in st.session_state:
+    st.session_state.auth_mode = "login"   # "login" | "signup"
+if "signup_step" not in st.session_state:
+    st.session_state.signup_step = "org"   # "org" | "details"
+if "signup_org" not in st.session_state:
+    st.session_state.signup_org = None     # {"id":…, "name":…}
 
 @st.cache_resource
 def get_supabase():
@@ -46,264 +57,343 @@ def get_supabase():
 
 supabase = get_supabase()
 
-# ─── ORG CODE SCREEN (popup card) ─────────────────────────────────────────────
-if not st.session_state.org_verified:
-
-    st.markdown("""
-    <style>
-    /* Dark gradient background — the "backdrop" behind the popup */
-    .stApp {
-        background: linear-gradient(160deg, #0a1f10 0%, #1a4429 55%, #0a1f10 100%) !important;
-    }
-
-    /* Narrow the page to popup width and push it down nicely */
-    .main .block-container {
-        max-width: 420px !important;
-        padding-top: 18vh !important;
-        padding-left: 16px !important;
-        padding-right: 16px !important;
-        margin: 0 auto !important;
-    }
-
-    /* st.form creates a real HTML container — style it as the popup card */
-    [data-testid="stForm"] {
-        background: #ffffff !important;
-        border-radius: 20px !important;
-        padding: 36px 32px 28px !important;
-        box-shadow:
-            0 2px 8px rgba(0,0,0,0.12),
-            0 12px 32px rgba(0,0,0,0.25),
-            0 24px 80px rgba(0,0,0,0.45) !important;
-        border: none !important;
-        outline: none !important;
-    }
-
-    /* Make sure input is always clickable */
-    [data-testid="stForm"] input,
-    [data-testid="stForm"] .stTextInput,
-    [data-testid="stForm"] .stTextInput > div,
-    [data-testid="stForm"] .stTextInput > div > div {
-        pointer-events: auto !important;
-        cursor: text !important;
-    }
-
-    /* Input inside the card */
-    [data-testid="stForm"] .stTextInput > div > div > input {
-        border-radius: 10px !important;
-        border: 1.5px solid #d8e8de !important;
-        padding: 10px 14px !important;
-        font-size: 15px !important;
-        direction: rtl !important;
-        text-align: right !important;
-        background: #f8fcfa !important;
-        transition: border-color 0.2s, box-shadow 0.2s !important;
-    }
-    [data-testid="stForm"] .stTextInput > div > div > input:focus {
-        border-color: #2d6a4f !important;
-        box-shadow: 0 0 0 3px rgba(45,106,79,0.14) !important;
-        background: #fff !important;
-    }
-
-    /* Submit button */
-    [data-testid="stForm"] [data-testid="stFormSubmitButton"] > button {
-        background: linear-gradient(135deg, #2d6a4f 0%, #1a3a1e 100%) !important;
-        color: #fff !important;
-        border: none !important;
-        border-radius: 10px !important;
-        height: 46px !important;
-        font-weight: 700 !important;
-        font-size: 15px !important;
-        width: 100% !important;
-        letter-spacing: 0.3px !important;
-        margin-top: 6px !important;
-        transition: all 0.2s ease !important;
-    }
-    [data-testid="stForm"] [data-testid="stFormSubmitButton"] > button:hover {
-        box-shadow: 0 6px 20px rgba(45,106,79,0.45) !important;
-        transform: translateY(-1px) !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    with st.form("org_form"):
-        st.markdown("""
-        <div style="text-align:center; margin-bottom:26px; direction:rtl;">
-            <div style="font-size:52px; line-height:1; margin-bottom:12px;">🌿</div>
-            <h2 style="color:#1a3a1e; font-weight:700; font-size:1.45em; margin:0 0 4px;">
-                ברוכים הבאים
-            </h2>
-            <p style="color:#6b9e7e; font-size:11px; letter-spacing:2.5px;
-                      text-transform:uppercase; margin:0 0 14px; font-weight:600;">
-                MY GREEN FIELDS
-            </p>
-            <p style="color:#777; font-size:14px; margin:0;">
-                הזיני קוד ארגון כדי להמשיך
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        org_code_input = st.text_input(
-            "קוד ארגון",
-            placeholder="הזן קוד ארגון...",
-            label_visibility="collapsed"
-        )
-        submitted = st.form_submit_button("המשך  ←", use_container_width=True)
-
-        if submitted:
-            if not org_code_input.strip():
-                st.error("יש להזין קוד ארגון")
-            else:
-                org = (
-                    supabase.table("organizations")
-                    .select("*")
-                    .eq("org_code", org_code_input.strip())
-                    .execute()
-                )
-                if len(org.data) == 0:
-                    st.error("קוד ארגון לא תקין")
-                else:
-                    st.session_state.org_verified = True
-                    st.session_state.org_id = org.data[0]["id"]
-                    st.session_state.org_name = org.data[0]["name"]
-                    st.rerun()
-
-    st.stop()
-
-# ─── CSS for Login screen + Main app (runs only after org is verified) ────────
-st.markdown("""
+# ─── Shared CSS for auth screens (org + login) ───────────────────────────────
+_POPUP_CSS = """
 <style>
 .stApp {
-    background: #f5f6f7;
+    background: linear-gradient(160deg, #0a1f10 0%, #1a4429 55%, #0a1f10 100%) !important;
 }
-
-.block-container {
-    max-width: 1000px;
-    margin: auto;
-    padding-top: 6vh;
+/* hide sidebar on auth screens */
+[data-testid="stSidebar"],
+[data-testid="collapsedControl"] {
+    display: none !important;
 }
-
-.fake-card {
-    background: #ffffff;
-    padding: 24px;
-    border-radius: 14px;
-    border: 1px solid rgba(0,0,0,0.08);
-    box-shadow: 0 8px 28px rgba(0,0,0,0.12);
-    max-width: 420px;
-    margin: auto;
+/* target block container across all Streamlit versions */
+.main .block-container,
+[data-testid="stMain"] .block-container,
+[data-testid="stMainBlockContainer"],
+section.main > div.block-container,
+div.block-container {
+    max-width: 440px !important;
+    width: 440px !important;
+    padding: 10vh 16px 40px !important;
+    margin: 0 auto !important;
 }
-
-.block-title {
-    text-align: center;
+[data-testid="stForm"] {
+    background: #ffffff !important;
+    border-radius: 20px !important;
+    padding: 32px 32px 26px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12),
+                0 12px 32px rgba(0,0,0,0.25),
+                0 24px 80px rgba(0,0,0,0.45) !important;
+    border: none !important;
+    outline: none !important;
 }
-
-.stButton > button {
-    width: 100%;
-    height: 42px;
-    border-radius: 8px;
-    font-weight: 600;
+[data-testid="stForm"] input,
+[data-testid="stForm"] .stTextInput,
+[data-testid="stForm"] .stTextInput > div,
+[data-testid="stForm"] .stTextInput > div > div {
+    pointer-events: auto !important;
+    cursor: text !important;
+}
+[data-testid="stForm"] .stTextInput > div > div > input {
+    border-radius: 10px !important;
+    border: 1.5px solid #d8e8de !important;
+    padding: 10px 14px !important;
+    font-size: 15px !important;
+    background: #f8fcfa !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+[data-testid="stForm"] .stTextInput > div > div > input:focus {
+    border-color: #2d6a4f !important;
+    box-shadow: 0 0 0 3px rgba(45,106,79,0.14) !important;
+    background: #fff !important;
+}
+[data-testid="stForm"] [data-testid="stFormSubmitButton"] > button {
+    background: linear-gradient(135deg, #2d6a4f 0%, #1a3a1e 100%) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    height: 46px !important;
+    font-weight: 700 !important;
+    font-size: 15px !important;
+    width: 100% !important;
+    margin-top: 8px !important;
+    transition: all 0.2s ease !important;
+}
+[data-testid="stForm"] [data-testid="stFormSubmitButton"] > button:hover {
+    box-shadow: 0 6px 20px rgba(45,106,79,0.45) !important;
+    transform: translateY(-1px) !important;
+}
+/* Lang toggle + secondary buttons on auth screens */
+[data-testid="stBaseButton-secondary"],
+[data-testid="stBaseButton-secondaryFormSubmit"] {
+    height: 46px !important;
+    font-size: 14px !important;
+    border-radius: 12px !important;
+    padding: 0 14px !important;
+    font-weight: 600 !important;
+    background: #1a4429 !important;
+    color: #ffffff !important;
+    border: none !important;
+    transition: opacity 0.2s !important;
+}
+[data-testid="stBaseButton-secondary"]:hover,
+[data-testid="stBaseButton-secondaryFormSubmit"]:hover {
+    opacity: 0.85 !important;
+    background: #2d6a4f !important;
+}
+/* secondary action buttons (signup / switch org) */
+.auth-secondary .stButton > button {
+    height: 40px !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    background: #f0f7f3 !important;
+    color: #2d6a4f !important;
+    border: 1.5px solid #c0ddd0 !important;
+    transition: all 0.2s ease !important;
+}
+.auth-secondary .stButton > button:hover {
+    background: #e0f0e8 !important;
+    border-color: #2d6a4f !important;
 }
 </style>
-""", unsafe_allow_html=True)
+"""
 
-TEXTS_LOGIN = {
-    "he": {
-        "system_name": "מערכת ניהול וחיזוי הפרחה",
-        "email": "אימייל",
-        "password": "סיסמה",
-        "login": "התחבר",
-        "signup": "צור משתמש",
-        "switch_org": "החלף ארגון",
-        "login_success": "התחברת בהצלחה",
-        "login_error": "שגיאת התחברות",
-        "signup_success": "המשתמש נוצר בהצלחה",
-        "signup_error": "שגיאה ביצירת משתמש"
-    },
-    "en": {
-        "system_name": "Flowering Management & Prediction System",
-        "email": "Email",
-        "password": "Password",
-        "login": "Login",
-        "signup": "Sign up",
-        "switch_org": "Switch Org",
-        "login_success": "Logged in successfully",
-        "login_error": "Login failed",
-        "signup_success": "User created successfully",
-        "signup_error": "Signup failed"
-    }
-}
+def _lang_toggle():
+    """Render a small EN / HE toggle row above the popup card."""
+    active = st.session_state.lang
+    st.markdown(f"""
+    <div class="lang-row">
+        <style>
+        div[data-testid="stHorizontalBlock"]:has(button[kind="secondary"]) {{}}
+        .lang-row .stButton:first-child > button {{
+            {"background:#2d6a4f !important; color:#fff !important; border-color:#2d6a4f !important;" if active=="en" else ""}
+        }}
+        .lang-row .stButton:last-child > button {{
+            {"background:#2d6a4f !important; color:#fff !important; border-color:#2d6a4f !important;" if active=="he" else ""}
+        }}
+        </style>
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown('<div class="lang-row">', unsafe_allow_html=True)
+    _, c1, c2 = st.columns([3, 1.5, 1.5])
+    with c1:
+        if st.button("🇺🇸 English", use_container_width=True, key="lt_en"):
+            st.session_state.lang = "en"
+            st.rerun()
+    with c2:
+        if st.button("🇮🇱 עברית", use_container_width=True, key="lt_he"):
+            st.session_state.lang = "he"
+            st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
-login_lang = st.selectbox(
-    "Language / שפה",
-    ["he", "en"],
-    index=0 if st.session_state.lang == "he" else 1,
-    format_func=lambda x: "עברית" if x == "he" else "English"
-)
-st.session_state.lang = login_lang
-t_login = TEXTS_LOGIN[login_lang]
+# ─── DEMO BYPASS ─────────────────────────────────────────────────────────────
+if st.query_params.get("demo") == "1" and st.session_state.user is None:
+    st.session_state.user         = type("U", (), {"email": "demo@mygreenfieldss.com"})()
+    st.session_state.org_verified = True
+    st.session_state.org_id       = "demo"
+    st.session_state.org_name     = "My Green Fields"
+    st.rerun()
 
+# ─── UNIFIED AUTH SCREEN ─────────────────────────────────────────────────────
 if st.session_state.user is None:
-    left, center, right = st.columns([1, 2, 1])
+    st.markdown(_POPUP_CSS, unsafe_allow_html=True)
+    _lang_toggle()
 
-    with center:
-        st.markdown('<div class="fake-card">', unsafe_allow_html=True)
+    _lk  = st.session_state.lang
+    _he  = _lk == "he"
+    _dir = "rtl" if _he else "ltr"
 
-        try:
-            logo_left, logo_center, logo_right = st.columns([1, 2, 1])
-            with logo_center:
-                st.image("app/logo.png", width=110)
-        except:
-            st.markdown("<div style='text-align:center;font-size:42px;'>🌿</div>", unsafe_allow_html=True)
+    # ── Texts ────────────────────────────────────────────────────────────────
+    T_AUTH = {
+        "he": {
+            "title":        "מערכת לחיזוי קנאביס",
+            "email":        "אימייל",
+            "password":     "סיסמה",
+            "login_btn":    "כניסה",
+            "to_signup":    "משתמש חדש? צור חשבון",
+            "to_login":     "כבר יש לך חשבון? כניסה",
+            "login_err":    "שגיאת התחברות",
+            "org_code":     "קוד ארגון",
+            "org_verify":   "אמת קוד ארגון",
+            "org_bad":      "קוד ארגון לא תקין",
+            "org_ok":       "אומת בהצלחה",
+            "first_name":   "שם פרטי",
+            "last_name":    "שם משפחה",
+            "role":         "תפקיד בחברה",
+            "signup_btn":   "צור חשבון",
+            "signup_err":   "שגיאה ביצירת חשבון",
+            "back":         "חזרה",
+        },
+        "en": {
+            "title":        "Cannabis Prediction System",
+            "email":        "Email",
+            "password":     "Password",
+            "login_btn":    "Login",
+            "to_signup":    "New user? Create account",
+            "to_login":     "Already have an account? Login",
+            "login_err":    "Login failed",
+            "org_code":     "Organization code",
+            "org_verify":   "Verify org code",
+            "org_bad":      "Invalid organization code",
+            "org_ok":       "Verified successfully",
+            "first_name":   "First name",
+            "last_name":    "Last name",
+            "role":         "Role in company",
+            "signup_btn":   "Create account",
+            "signup_err":   "Signup failed",
+            "back":         "Back",
+        }
+    }
+    t = T_AUTH[_lk]
 
-        st.markdown(f"""
-        <h1 style="text-align:center; color:#c8a951; margin-bottom:8px;">
-            MY GREEN FIELDS
-        </h1>
-        <p style="text-align:center; color:#2d6a4f; margin-bottom:22px;">
-            {t_login["system_name"]}
-        </p>
-        """, unsafe_allow_html=True)
+    # ══ LOGIN MODE ════════════════════════════════════════════════════════════
+    if st.session_state.auth_mode == "login":
+        with st.form("login_form"):
+            st.markdown(f"""
+            <div style="text-align:center; margin-bottom:18px; direction:{_dir};">
+                <h2 style="color:#1a3a1e; font-weight:700; font-size:1.4em; margin:0;">
+                    {t['title']}
+                </h2>
+            </div>
+            """, unsafe_allow_html=True)
+            email    = st.text_input(t["email"],    placeholder=t["email"],    label_visibility="collapsed")
+            password = st.text_input(t["password"], placeholder=t["password"], type="password", label_visibility="collapsed")
+            login_ok = st.form_submit_button(t["login_btn"], use_container_width=True)
 
-        email = st.text_input(t_login["email"])
-        password = st.text_input(t_login["password"], type="password")
-
-        btn1, btn2, btn3 = st.columns(3)
-
-        with btn1:
-            if st.button(t_login["login"], use_container_width=True):
+            if login_ok:
                 try:
-                    res = supabase.auth.sign_in_with_password({
-                        "email": email,
-                        "password": password
-                    })
-                    st.session_state.user = res.user
-                    st.success(t_login["login_success"])
+                    res  = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                    user = res.user
+                    # Restore org from Supabase user metadata (set at signup)
+                    meta   = user.user_metadata or {}
+                    org_id = meta.get("org_id")
+                    if org_id:
+                        org_rows = supabase.table("organizations").select("*").eq("id", org_id).execute()
+                        if org_rows.data:
+                            st.session_state.org_verified = True
+                            st.session_state.org_id       = org_id
+                            st.session_state.org_name     = org_rows.data[0]["name"]
+                    st.session_state.user = user
                     st.rerun()
                 except Exception as e:
-                    st.error(f"{t_login['login_error']}: {e}")
+                    st.error(f"{t['login_err']}: {e}")
 
-        with btn2:
-            if st.button(t_login["signup"], use_container_width=True):
-                try:
-                    supabase.auth.sign_up({
-                        "email": email,
-                        "password": password
-                    })
-                    st.success(t_login["signup_success"])
-                except Exception as e:
-                    st.error(f"{t_login['signup_error']}: {e}")
+        if st.button(t["to_signup"], use_container_width=True, key="go_signup"):
+            st.session_state.auth_mode  = "signup"
+            st.session_state.signup_step = "org"
+            st.session_state.signup_org  = None
+            st.rerun()
 
-        with btn3:
-            if st.button(t_login["switch_org"], use_container_width=True):
-                st.session_state.org_verified = False
-                st.session_state.org_id = None
-                st.session_state.org_name = None
+    # ══ SIGNUP MODE ══════════════════════════════════════════════════════════
+    else:
+        # ── Step 1: verify org code ──────────────────────────────────────────
+        if st.session_state.signup_step == "org":
+            with st.form("signup_org_form"):
+                st.markdown(f"""
+                <div style="text-align:center; margin-bottom:18px; direction:{_dir};">
+                    <h2 style="color:#1a3a1e; font-weight:700; font-size:1.4em; margin:0;">
+                        {t['title']}
+                    </h2>
+                </div>
+                """, unsafe_allow_html=True)
+                org_input = st.text_input(t["org_code"], placeholder=t["org_code"], label_visibility="collapsed")
+                verify_ok = st.form_submit_button(t["org_verify"], use_container_width=True)
+
+                if verify_ok:
+                    if not org_input.strip():
+                        st.error(t["org_bad"])
+                    else:
+                        org_rows = (supabase.table("organizations")
+                                    .select("*")
+                                    .eq("org_code", org_input.strip())
+                                    .execute())
+                        if not org_rows.data:
+                            st.error(t["org_bad"])
+                        else:
+                            st.session_state.signup_org  = {"id": org_rows.data[0]["id"],
+                                                             "name": org_rows.data[0]["name"]}
+                            st.session_state.signup_step = "details"
+                            st.rerun()
+
+            if st.button(t["to_login"], use_container_width=True, key="go_login_from_org"):
+                st.session_state.auth_mode = "login"
                 st.rerun()
 
-        st.markdown('</div>', unsafe_allow_html=True)
+        # ── Step 2: fill in user details ────────────────────────────────────
+        else:
+            org_name = st.session_state.signup_org["name"]
+            with st.form("signup_details_form"):
+                # Logo
+                try:
+                    _logo = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logo_white.png')
+                    _, logo_mid, _ = st.columns([1, 2, 1])
+                    with logo_mid:
+                        st.image(_logo, use_container_width=True)
+                except:
+                    pass
+
+                st.markdown(f"""
+                <div style="text-align:center; margin-bottom:8px; direction:{_dir};">
+                    <h2 style="color:#1a3a1e; font-weight:700; font-size:1.4em; margin:0 0 4px;">
+                        {t['title']}
+                    </h2>
+                    <div style="display:inline-block; background:#e8f5ee; color:#2d6a4f;
+                                border-radius:8px; padding:4px 14px; font-size:13px;
+                                font-weight:600; margin-top:6px;">
+                        ✓ {org_name}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                first_name = st.text_input(t["first_name"], placeholder=t["first_name"], label_visibility="collapsed")
+                last_name  = st.text_input(t["last_name"],  placeholder=t["last_name"],  label_visibility="collapsed")
+                role       = st.text_input(t["role"],       placeholder=t["role"],       label_visibility="collapsed")
+                email      = st.text_input(t["email"],      placeholder=t["email"],      label_visibility="collapsed")
+                password   = st.text_input(t["password"],   placeholder=t["password"],   type="password", label_visibility="collapsed")
+                signup_ok  = st.form_submit_button(t["signup_btn"], use_container_width=True)
+
+                if signup_ok:
+                    if not all([first_name, last_name, email, password]):
+                        st.error("יש למלא את כל השדות" if _he else "Please fill in all fields")
+                    else:
+                        try:
+                            meta = {
+                                "org_id":     st.session_state.signup_org["id"],
+                                "org_name":   org_name,
+                                "first_name": first_name,
+                                "last_name":  last_name,
+                                "role":       role,
+                            }
+                            res = supabase.auth.sign_up({
+                                "email":    email,
+                                "password": password,
+                                "options":  {"data": meta}
+                            })
+                            st.session_state.user         = res.user
+                            st.session_state.org_verified = True
+                            st.session_state.org_id       = meta["org_id"]
+                            st.session_state.org_name     = org_name
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"{t['signup_err']}: {e}")
+
+            if st.button(t["back"], use_container_width=True, key="back_to_org"):
+                st.session_state.signup_step = "org"
+                st.session_state.signup_org  = None
+                st.rerun()
 
     st.stop()
 
 def find_file(filename, folders=['app', 'models', '.']):
+    # First: look relative to this script's directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(script_dir, filename)
+    if os.path.exists(path):
+        return path
+    # Then: look relative to cwd
     for folder in folders:
         path = os.path.join(folder, filename)
         if os.path.exists(path):
@@ -318,14 +408,26 @@ def load_data():
     return None
 
 @st.cache_resource
-def load_models():
+def load_models(_version=1):
     try:
-        gb = joblib.load(find_file('gb_model.pkl'))
-        feature_cols = joblib.load(find_file('feature_cols.pkl'))
-        mapping = joblib.load(find_file('mapping.pkl'))
-        return gb, feature_cols, mapping
-    except:
-        return None, None, None
+        p1 = find_file('gb_model.pkl')
+        p2 = find_file('feature_cols.pkl')
+        p3 = find_file('mapping.pkl')
+        if not p1 or not p2 or not p3:
+            return None, None, None, None, None
+        gb = joblib.load(p1)
+        feature_cols = joblib.load(p2)
+        mapping = joblib.load(p3)
+        gb_thca, thca_feature_cols = None, None
+        if mapping.get('has_thca_model'):
+            p4 = find_file('gb_thca_model.pkl')
+            p5 = find_file('thca_feature_cols.pkl')
+            if p4 and p5:
+                gb_thca = joblib.load(p4)
+                thca_feature_cols = joblib.load(p5)
+        return gb, feature_cols, mapping, gb_thca, thca_feature_cols
+    except Exception as e:
+        return None, None, None, None, None
 
 def get_season(month, lk='he'):
     if month in [12, 1, 2]: return 'Winter' if lk=='en' else 'חורף'
@@ -359,8 +461,37 @@ def predict_ml(model, feature_cols, mapping, df, greenhouse, strain, start_date)
     X = pd.DataFrame([row])[feature_cols]
     return round(float(model.predict(X)[0]), 1), season
 
+def predict_thca(model, thca_feature_cols, mapping, df, greenhouse, strain, start_date):
+    season = get_season(start_date.month, st.session_state.lang)
+    greenhouses = mapping['חממות']
+    strains = mapping['זנים']
+    seasons = mapping['עונות']
+
+    gh_code = greenhouses.index(greenhouse) if greenhouse in greenhouses else 0
+    strain_code = strains.index(strain) if strain in strains else 0
+    season_code = seasons.index(season) if season in seasons else 0
+
+    sensor_cols = [c for c in thca_feature_cols if '_mean' in c or '_std' in c]
+    sensor_means = {}
+    for col in sensor_cols:
+        gh_data = df[df['חממה'] == greenhouse][col] if col in df.columns else pd.Series()
+        sensor_means[col] = gh_data.mean() if not gh_data.empty else 0
+
+    row = {
+        'חממה_קוד': gh_code,
+        'זן_קוד': strain_code,
+        'עונה_קוד': season_code,
+        'חודש_התחלה': start_date.month,
+        **sensor_means
+    }
+    X = pd.DataFrame([row])[thca_feature_cols]
+    return round(float(model.predict(X)[0]), 1)
+
 df = load_data()
-gb, feature_cols, mapping = load_models()
+gb, feature_cols, mapping, gb_thca, thca_feature_cols = load_models(_version=1)
+if gb is None:
+    _dbg = find_file('gb_model.pkl')
+    st.sidebar.error(f"model path: {_dbg}")
 
 if df is None:
     st.error("לא נמצאו נתונים")
@@ -399,7 +530,63 @@ TRANSLATIONS = {
 
 if "lang" not in st.session_state:
     params = st.query_params
-    st.session_state.lang = params.get("lang", "he")
+    st.session_state.lang = params.get("lang", "en")
+
+# ─── Main app CSS + JS (sidebar background + button colors) ──────────────────
+st.markdown("""
+<style>
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0d2b16 0%, #1a4429 100%) !important;
+}
+[data-testid="stSidebar"] * {
+    color: #e8f5ee !important;
+}
+[data-testid="stSidebar"] hr {
+    border-color: #2d6a4f !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# JS approach for sidebar buttons — CSS selectors alone don't override Streamlit 1.56 styles
+_is_he = (st.session_state.lang == "he")
+components.html(f"""
+<script>
+var isHebrew = {'true' if _is_he else 'false'};
+
+function applyGreenButtons() {{
+    try {{
+        var doc = window.parent.document;
+        var sidebar = doc.querySelector('[data-testid="stSidebar"]');
+        if (!sidebar) return;
+        sidebar.querySelectorAll('button').forEach(function(btn) {{
+            btn.style.setProperty('background-color', '#2d6a4f', 'important');
+            btn.style.setProperty('color', '#ffffff', 'important');
+            btn.style.setProperty('border', '1px solid #3d8a65', 'important');
+            btn.style.setProperty('border-radius', '10px', 'important');
+            btn.style.setProperty('font-weight', '600', 'important');
+        }});
+    }} catch(e) {{}}
+}}
+
+function moveSidebarRight() {{
+    if (!isHebrew) return;
+    try {{
+        var doc  = window.parent.document;
+        var app  = doc.querySelector('.stApp');
+        var side = doc.querySelector('[data-testid="stSidebar"]');
+        if (!app || !side) return;
+        app.style.setProperty('flex-direction', 'row-reverse', 'important');
+    }} catch(e) {{}}
+}}
+
+applyGreenButtons();
+moveSidebarRight();
+setTimeout(function(){{ applyGreenButtons(); moveSidebarRight(); }}, 500);
+setTimeout(function(){{ applyGreenButtons(); moveSidebarRight(); }}, 1500);
+var obs = new MutationObserver(function(){{ applyGreenButtons(); moveSidebarRight(); }});
+obs.observe(window.parent.document.body, {{childList: true, subtree: true}});
+</script>
+""", height=1)
 
 col_he, col_en = st.sidebar.columns(2)
 with col_he:
@@ -433,11 +620,81 @@ if lang_key == "en":
     p, li { direction: ltr !important; text-align: left !important; }
     input { direction: ltr !important; text-align: left !important; }
     [data-baseweb="select"] { direction: ltr !important; }
-
     [data-baseweb="input"] { direction: ltr !important; text-align: left !important; }
     </style>""", unsafe_allow_html=True)
+else:
+    st.markdown("""<style>
+    /* RTL layout — sidebar moves to the right */
+    .stApp { flex-direction: row-reverse !important; }
+    [data-testid="stSidebar"] { order: 2 !important; }
+    [data-testid="stMain"]    { order: 1 !important; }
+    [data-testid="stMainBlockContainer"],
+    .main .block-container { direction: rtl !important; }
+    [data-testid="stHeadingWithActionElements"] { text-align: right !important; direction: rtl !important; }
+    [data-testid="stHeadingWithActionElements"] > div { justify-content: flex-end !important; }
+    .stMetric { direction: rtl !important; }
+    .stMetric label { text-align: right !important; }
+    label[data-testid="stWidgetLabel"] { text-align: right !important; direction: rtl !important; }
+    .stRadio { direction: rtl !important; text-align: right !important; }
+    .stRadio label { text-align: right !important; }
+    .stSelectbox label { direction: rtl !important; text-align: right !important; }
+    .stTextInput label { direction: rtl !important; text-align: right !important; }
+    .stDateInput label { direction: rtl !important; text-align: right !important; }
+    .stMultiSelect label { direction: rtl !important; text-align: right !important; }
+    .stCheckbox label { direction: rtl !important; text-align: right !important; }
+    p, li { direction: rtl !important; text-align: right !important; }
+    input { direction: rtl !important; text-align: right !important; }
+    [data-baseweb="select"] { direction: rtl !important; }
+    [data-baseweb="input"] { direction: rtl !important; text-align: right !important; }
+    [data-testid="stSidebar"] { direction: rtl !important; }
+    [data-testid="stSidebar"] * { text-align: right !important; }
+    </style>""", unsafe_allow_html=True)
 
-st.sidebar.title("🌿 " + T["title"])
+# ─── Top-of-page header ──────────────────────────────────────────────────────
+st.markdown("""
+<style>
+.mgf-header {
+    background: #f0f2f6;
+    border-radius: 12px;
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.mgf-header-title {
+    font-size: 2em;
+    font-weight: 700;
+    color: #c8a951;
+    line-height: 1.2;
+    margin: 0;
+}
+.mgf-header-sub {
+    font-size: 13px;
+    color: #2d6a4f;
+    margin-top: 4px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+hdr_left, hdr_right = st.columns([5, 1])
+with hdr_left:
+    st.markdown("""
+    <div class="mgf-header">
+        <div>
+            <div class="mgf-header-title">My Green Fields</div>
+            <div class="mgf-header-sub">מערכת ניהול וחיזוי הפרחה</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+with hdr_right:
+    try:
+        logo_path = find_file('logo_white.png')
+        if logo_path:
+            st.image(logo_path, width=90)
+    except:
+        pass
+
 st.sidebar.markdown("---")
 if gb is not None:
     st.sidebar.success(T["ml_active"])
@@ -835,16 +1092,29 @@ elif page == "🔮 חיזוי אצווה":
             season = get_season(start_date.month, lang_key)
             method = "📊 ממוצע היסטורי"
 
+        thca_pred = None
+        if gb_thca is not None and thca_feature_cols is not None:
+            try:
+                thca_pred = predict_thca(gb_thca, thca_feature_cols, mapping, df, greenhouse, strain, start_date)
+            except Exception:
+                thca_pred = None
+
         end_date = datetime.combine(start_date, datetime.min.time()) + timedelta(days=pred)
 
         st.markdown("---")
-        col1, col2, col3 = st.columns(3)
+        if thca_pred is not None:
+            col1, col2, col3, col4 = st.columns(4)
+        else:
+            col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("⏱️ ימי הפרחה צפויים", f"{pred} ימים")
         with col2:
             st.metric("📅 תאריך קציר משוער", end_date.strftime("%d/%m/%Y"))
         with col3:
             st.metric("🌤️ עונה", season)
+        if thca_pred is not None:
+            with col4:
+                st.metric("🧪 THCA צפוי" if lang_key == "he" else "🧪 Predicted THCA", f"{thca_pred:.1f}%")
 
         st.info(f"שיטת Prediction: {method}")
 
