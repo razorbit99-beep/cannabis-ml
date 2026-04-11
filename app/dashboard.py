@@ -414,7 +414,7 @@ def load_models(_version=1):
         p2 = find_file('feature_cols.pkl')
         p3 = find_file('mapping.pkl')
         if not p1 or not p2 or not p3:
-            return None, None, None, None, None
+            return None, None, None, None, None, None
         gb = joblib.load(p1)
         feature_cols = joblib.load(p2)
         mapping = joblib.load(p3)
@@ -425,9 +425,14 @@ def load_models(_version=1):
             if p4 and p5:
                 gb_thca = joblib.load(p4)
                 thca_feature_cols = joblib.load(p5)
-        return gb, feature_cols, mapping, gb_thca, thca_feature_cols
+        # ממוצעים עונתיים (חממה × חודש) לניבוי מדויק
+        seasonal = None
+        p6 = find_file('seasonal_averages.pkl')
+        if p6:
+            seasonal = joblib.load(p6)
+        return gb, feature_cols, mapping, gb_thca, thca_feature_cols, seasonal
     except Exception as e:
-        return None, None, None, None, None
+        return None, None, None, None, None, None
 
 def get_season(month, lk='he'):
     if month in [12, 1, 2]: return 'Winter' if lk=='en' else 'חורף'
@@ -435,59 +440,79 @@ def get_season(month, lk='he'):
     if month in [6, 7, 8]: return 'Summer' if lk=='en' else 'קיץ'
     return 'Fall' if lk=='en' else 'סתיו'
 
-def predict_ml(model, feature_cols, mapping, df, greenhouse, strain, start_date):
+def _get_sensor_means_for_prediction(feature_cols, df, greenhouse, start_date, seasonal=None):
+    """
+    מחזיר dict של ערכי חיישנים לניבוי.
+    מעדיף ממוצעים עונתיים (seasonal) על פני ממוצע כללי מהדאטאסט.
+    """
+    sensor_cols = [c for c in feature_cols if '_mean' in c or '_std' in c]
+    sensor_means = {}
+    gh_letter = greenhouse[0].upper() if greenhouse else ''
+    month = start_date.month
+
+    if seasonal and (gh_letter, month) in seasonal:
+        # ממוצעים עונתיים מדויקים (חממה × חודש)
+        seas_data = seasonal[(gh_letter, month)]
+        for col in sensor_cols:
+            sensor_means[col] = seas_data.get(col, np.nan)
+    else:
+        # fallback: ממוצע כללי לפי חממה מנתוני אימון
+        for col in sensor_cols:
+            if col in df.columns:
+                gh_data = df[df['חממה'] == greenhouse][col].dropna()
+                sensor_means[col] = float(gh_data.mean()) if not gh_data.empty else np.nan
+            else:
+                sensor_means[col] = np.nan
+
+    return sensor_means
+
+
+def predict_ml(model, feature_cols, mapping, df, greenhouse, strain, start_date, seasonal=None):
     season = get_season(start_date.month, st.session_state.lang)
     greenhouses = mapping['חממות']
     strains = mapping['זנים']
     seasons = mapping['עונות']
 
-    gh_code = greenhouses.index(greenhouse) if greenhouse in greenhouses else 0
-    strain_code = strains.index(strain) if strain in strains else 0
-    season_code = seasons.index(season) if season in seasons else 0
+    gh_code     = greenhouses.index(greenhouse) if greenhouse in greenhouses else 0
+    strain_code = strains.index(strain)         if strain in strains         else 0
+    season_code = seasons.index(season)         if season in seasons         else 0
 
-    sensor_cols = [c for c in feature_cols if '_mean' in c or '_std' in c]
-    sensor_means = {}
-    for col in sensor_cols:
-        gh_data = df[df['חממה'] == greenhouse][col] if col in df.columns else pd.Series()
-        sensor_means[col] = gh_data.mean() if not gh_data.empty else 0
+    sensor_means = _get_sensor_means_for_prediction(feature_cols, df, greenhouse, start_date, seasonal)
 
     row = {
-        'חממה_קוד': gh_code,
-        'זן_קוד': strain_code,
-        'עונה_קוד': season_code,
+        'חממה_קוד':    gh_code,
+        'זן_קוד':      strain_code,
+        'עונה_קוד':    season_code,
         'חודש_התחלה': start_date.month,
         **sensor_means
     }
-    # אם המודל אומן עם THCA כפיצ'ר — ממלאים עם ממוצע הזן או הממוצע הכללי
+    # אם המודל אומן עם THCA כפיצ'ר — ממלאים עם ממוצע הזן
     if 'THCA' in feature_cols:
         if 'THCA' in df.columns:
             strain_thca = df[df['זן'] == strain]['THCA'].dropna()
-            row['THCA'] = float(strain_thca.mean()) if not strain_thca.empty else float(df['THCA'].dropna().mean())
+            row['THCA'] = float(strain_thca.mean()) if not strain_thca.empty else float(df['THCA'].dropna().mean() if df['THCA'].notna().any() else 21.0)
         else:
-            row['THCA'] = 21.0  # ממוצע כללי מתוצאות המעבדה
+            row['THCA'] = 21.0
     X = pd.DataFrame([row])[feature_cols]
     return round(float(model.predict(X)[0]), 1), season
 
-def predict_thca(model, thca_feature_cols, mapping, df, greenhouse, strain, start_date):
+
+def predict_thca(model, thca_feature_cols, mapping, df, greenhouse, strain, start_date, seasonal=None):
     season = get_season(start_date.month, st.session_state.lang)
     greenhouses = mapping['חממות']
     strains = mapping['זנים']
     seasons = mapping['עונות']
 
-    gh_code = greenhouses.index(greenhouse) if greenhouse in greenhouses else 0
-    strain_code = strains.index(strain) if strain in strains else 0
-    season_code = seasons.index(season) if season in seasons else 0
+    gh_code     = greenhouses.index(greenhouse) if greenhouse in greenhouses else 0
+    strain_code = strains.index(strain)         if strain in strains         else 0
+    season_code = seasons.index(season)         if season in seasons         else 0
 
-    sensor_cols = [c for c in thca_feature_cols if '_mean' in c or '_std' in c]
-    sensor_means = {}
-    for col in sensor_cols:
-        gh_data = df[df['חממה'] == greenhouse][col] if col in df.columns else pd.Series()
-        sensor_means[col] = gh_data.mean() if not gh_data.empty else 0
+    sensor_means = _get_sensor_means_for_prediction(thca_feature_cols, df, greenhouse, start_date, seasonal)
 
     row = {
-        'חממה_קוד': gh_code,
-        'זן_קוד': strain_code,
-        'עונה_קוד': season_code,
+        'חממה_קוד':    gh_code,
+        'זן_קוד':      strain_code,
+        'עונה_קוד':    season_code,
         'חודש_התחלה': start_date.month,
         **sensor_means
     }
@@ -495,7 +520,7 @@ def predict_thca(model, thca_feature_cols, mapping, df, greenhouse, strain, star
     return round(float(model.predict(X)[0]), 1)
 
 df = load_data()
-gb, feature_cols, mapping, gb_thca, thca_feature_cols = load_models(_version=1)
+gb, feature_cols, mapping, gb_thca, thca_feature_cols, seasonal = load_models(_version=1)
 if gb is None:
     _dbg = find_file('gb_model.pkl')
     st.sidebar.error(f"model path: {_dbg}")
@@ -1091,7 +1116,7 @@ elif page == "🔮 חיזוי אצווה":
 
     if st.button("Calculate Prediction" if lang_key=="en" else "חשב חיזוי", use_container_width=True):
         if gb is not None:
-            pred, season = predict_ml(gb, feature_cols, mapping, df, greenhouse, strain, start_date)
+            pred, season = predict_ml(gb, feature_cols, mapping, df, greenhouse, strain, start_date, seasonal=seasonal)
             method = "🤖 מודל ML (Gradient Boosting - דיוק 93%)"
         else:
             hist = df[(df['חממה'] == greenhouse) & (df['זן'] == strain)]['סה״כ ימים בהפרחה']
@@ -1102,7 +1127,7 @@ elif page == "🔮 חיזוי אצווה":
         thca_pred = None
         if gb_thca is not None and thca_feature_cols is not None:
             try:
-                thca_pred = predict_thca(gb_thca, thca_feature_cols, mapping, df, greenhouse, strain, start_date)
+                thca_pred = predict_thca(gb_thca, thca_feature_cols, mapping, df, greenhouse, strain, start_date, seasonal=seasonal)
             except Exception:
                 thca_pred = None
 
@@ -1274,6 +1299,22 @@ elif page == "📅 גאנט":
                     row_ends.append(batch['end'])
             filtered_gantt.loc[mask, 'שורה'] = rows
 
+        # חיזוי THCA לכל אצווה בגאנט
+        if gb_thca is not None and thca_feature_cols is not None:
+            thca_preds = []
+            for _, row_g in filtered_gantt.iterrows():
+                try:
+                    t = predict_thca(gb_thca, thca_feature_cols, mapping, df,
+                                     row_g['חממה'], row_g['זן'], row_g['start'].date(), seasonal=seasonal)
+                    thca_preds.append(f"{t:.1f}%")
+                except Exception:
+                    thca_preds.append("—")
+            filtered_gantt = filtered_gantt.copy()
+            filtered_gantt['THCA צפוי'] = thca_preds
+            hover_cols = ['מספר אצווה', 'סוג', 'THCA צפוי']
+        else:
+            hover_cols = ['מספר אצווה', 'סוג']
+
         fig = px.timeline(
             filtered_gantt,
             x_start='start',
@@ -1281,7 +1322,7 @@ elif page == "📅 גאנט":
             y='שורה',
             color='זן',
             title="Flowering Batches Gantt" if lang_key=="en" else "גאנט אצוות הפרחה",
-            hover_data=['מספר אצווה','סוג'],
+            hover_data=hover_cols,
             color_discrete_sequence=['#a8c8e8','#b8ddb8','#f5c8a0','#d4a8b8','#c8c8e8','#f5e0a0','#a8d4d0','#e8c0b8','#c0d4a8','#d4c0e0']
         )
         today_str = datetime.today().strftime('%Y-%m-%d')
@@ -1307,3 +1348,22 @@ elif page == "📅 גאנט":
                 st.metric("Avg Days" if lang_key=="en" else "ממוצע ימים", f"{filtered_gantt[days_col[0]].mean():.1f}")
             else:
                 st.metric("Avg Days" if lang_key=="en" else "ממוצע ימים", "N/A")
+
+        # טבלת אצוות פעילות כרגע עם חיזוי THCA
+        active_now = filtered_gantt[(filtered_gantt['start'] <= today) & (filtered_gantt['end'] >= today)].copy()
+        if len(active_now) > 0 and 'THCA צפוי' in active_now.columns:
+            st.markdown("---")
+            if lang_key == "en":
+                st.markdown('<h4 style="text-align:left">🧪 Active Batches – Predicted THCA</h4>', unsafe_allow_html=True)
+            else:
+                st.subheader("🧪 אצוות פעילות כרגע – חיזוי THCA")
+            show_cols = ['מספר אצווה', 'חממה', 'זן', 'start', 'end', 'THCA צפוי']
+            show_cols = [c for c in show_cols if c in active_now.columns]
+            display_active = active_now[show_cols].copy()
+            display_active['start'] = display_active['start'].dt.strftime('%d/%m/%Y')
+            display_active['end']   = display_active['end'].dt.strftime('%d/%m/%Y')
+            display_active = display_active.rename(columns={
+                'start': 'תאריך התחלה' if lang_key=='he' else 'Start Date',
+                'end':   'תאריך סיום'  if lang_key=='he' else 'End Date',
+            })
+            st.dataframe(display_active, use_container_width=True, hide_index=True)
