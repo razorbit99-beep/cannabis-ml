@@ -851,16 +851,33 @@ if page == "📋 שיבוץ אצוות":
             ]
 
             # בדיקת תקופת מעבר מלאה — קציר + ניקוי + העברה
-            gh_batches = batches_db[batches_db['greenhouse'] == new_gh].dropna(subset=['end_date'])
-            past_batches = gh_batches[gh_batches['end_date'] < target_dt]
+            # שימוש ב-actual_end_date אם קיים (סיום מוקדם)
+            gh_batches = batches_db[batches_db['greenhouse'] == new_gh].dropna(subset=['end_date']).copy()
+            if 'actual_end_date' in gh_batches.columns:
+                gh_batches['effective_end'] = gh_batches['actual_end_date'].combine_first(gh_batches['end_date'])
+                gh_batches['effective_end'] = pd.to_datetime(gh_batches['effective_end'], errors='coerce')
+            else:
+                gh_batches['effective_end'] = pd.to_datetime(gh_batches['end_date'], errors='coerce')
+            if 'actual_cleaning_days' in gh_batches.columns:
+                gh_batches['eff_cleaning'] = gh_batches['actual_cleaning_days'].combine_first(gh_batches.get('cleaning_days', pd.Series([cleaning_days]*len(gh_batches))))
+            else:
+                gh_batches['eff_cleaning'] = cleaning_days
+            if 'actual_transfer_days' in gh_batches.columns:
+                gh_batches['eff_transfer'] = gh_batches['actual_transfer_days'].combine_first(gh_batches.get('transfer_days', pd.Series([transfer_days]*len(gh_batches))))
+            else:
+                gh_batches['eff_transfer'] = transfer_days
+            past_batches = gh_batches[gh_batches['effective_end'] < target_dt]
             transition_blocked = False
             earliest_allowed = None
             last_end = None
             if len(past_batches) > 0:
-                last_end = past_batches['end_date'].max()
+                latest_idx = past_batches['effective_end'].idxmax()
+                last_end = past_batches.loc[latest_idx, 'effective_end']
+                eff_c = int(past_batches.loc[latest_idx, 'eff_cleaning']) if pd.notna(past_batches.loc[latest_idx, 'eff_cleaning']) else cleaning_days
+                eff_t = int(past_batches.loc[latest_idx, 'eff_transfer']) if pd.notna(past_batches.loc[latest_idx, 'eff_transfer']) else transfer_days
                 harvest_end   = last_end + timedelta(days=harvest_days)
-                cleaning_end  = harvest_end + timedelta(days=cleaning_days)
-                earliest_allowed = cleaning_end + timedelta(days=transfer_days)
+                cleaning_end  = harvest_end + timedelta(days=eff_c)
+                earliest_allowed = cleaning_end + timedelta(days=eff_t)
                 if target_dt < earliest_allowed:
                     transition_blocked = True
                     # זיהוי איזה שלב חסום
@@ -1032,7 +1049,9 @@ if page == "📋 שיבוץ אצוות":
                 index=0,
                 format_func=lambda x: ("Enter batch ID..." if lang_key=="en" else "הכנס מספר אצווה...") if x == "" else x
             )
-            action = st.radio("Action" if lang_key=="en" else "פעולה", ["Delete", "Update End Date"] if lang_key=="en" else ["מחיקה", "עדכון תאריך סיום"], horizontal=False)
+
+            action_opts = ["מחיקה", "עדכון תאריך סיום", "✅ סיום מוקדם"] if lang_key!="en" else ["Delete", "Update End Date", "✅ Early Completion"]
+            action = st.radio("Action" if lang_key=="en" else "פעולה", action_opts, horizontal=False)
 
             if action in ["מחיקה", "Delete"]:
                 if st.button("Delete Batch" if lang_key=="en" else "מחק אצווה", type="primary"):
@@ -1044,7 +1063,8 @@ if page == "📋 שיבוץ אצוות":
                             st.rerun()
                         except Exception as e:
                             st.error(f"Connection error: {e}" if lang_key=="en" else f"שגיאה: {e}")
-            else:
+
+            elif action in ["עדכון תאריך סיום", "Update End Date"]:
                 new_end = st.date_input("New End Date" if lang_key=="en" else "תאריך סיום חדש", datetime.today())
                 if st.button("✏️ עדכן", type="primary"):
                     if supabase:
@@ -1055,6 +1075,109 @@ if page == "📋 שיבוץ אצוות":
                             st.rerun()
                         except Exception as e:
                             st.error(f"Connection error: {e}" if lang_key=="en" else f"שגיאה: {e}")
+
+            elif action in ["✅ סיום מוקדם", "✅ Early Completion"] and selected_batch:
+                # שליפת נתוני האצווה הנוכחית
+                batch_row = batches_db[batches_db['batch_id'] == selected_batch]
+                if len(batch_row) > 0:
+                    b = batch_row.iloc[0]
+                    planned_end  = pd.to_datetime(b.get('end_date'), errors='coerce')
+                    planned_h    = int(b['harvest_days'])  if 'harvest_days'  in b.index and pd.notna(b.get('harvest_days'))  else 1
+                    planned_c    = int(b['cleaning_days']) if 'cleaning_days' in b.index and pd.notna(b.get('cleaning_days')) else 1
+                    planned_t    = int(b['transfer_days']) if 'transfer_days' in b.index and pd.notna(b.get('transfer_days')) else 1
+
+                    st.markdown(f"**אצווה:** `{selected_batch}` | **סיום מתוכנן:** {planned_end.strftime('%d/%m/%Y') if pd.notna(planned_end) else '—'}")
+                    st.markdown("---")
+                    st.markdown("##### סמן את השלבים שהסתיימו מוקדם:")
+
+                    ec1, ec2 = st.columns(2)
+                    with ec1:
+                        early_flowering = st.checkbox(
+                            "🌿 הפרחה הסתיימה מוקדם" if lang_key=="he" else "🌿 Flowering ended early"
+                        )
+                        if early_flowering:
+                            actual_end_date = st.date_input(
+                                "תאריך סיום הפרחה בפועל" if lang_key=="he" else "Actual flowering end date",
+                                value=planned_end.date() if pd.notna(planned_end) else datetime.today().date(),
+                                key='actual_end_date_input'
+                            )
+                        else:
+                            actual_end_date = None
+
+                        early_harvest = st.checkbox(
+                            f"🌾 קציר הסתיים מוקדם (מתוכנן: {planned_h}י)" if lang_key=="he"
+                            else f"🌾 Harvest ended early (planned: {planned_h}d)"
+                        )
+                        if early_harvest:
+                            actual_harvest = st.number_input(
+                                "ימי קציר בפועל" if lang_key=="he" else "Actual harvest days",
+                                min_value=1, max_value=planned_h, value=1, step=1, key='actual_harvest_input'
+                            )
+                        else:
+                            actual_harvest = None
+
+                    with ec2:
+                        early_cleaning = st.checkbox(
+                            f"🧹 ניקוי הסתיים מוקדם (מתוכנן: {planned_c}י)" if lang_key=="he"
+                            else f"🧹 Cleaning ended early (planned: {planned_c}d)"
+                        )
+                        if early_cleaning:
+                            actual_cleaning = st.number_input(
+                                "ימי ניקוי בפועל" if lang_key=="he" else "Actual cleaning days",
+                                min_value=1, max_value=planned_c, value=1, step=1, key='actual_cleaning_input'
+                            )
+                        else:
+                            actual_cleaning = None
+
+                        early_transfer = st.checkbox(
+                            f"🌱 העברת שתילים הסתיימה מוקדם (מתוכנן: {planned_t}י)" if lang_key=="he"
+                            else f"🌱 Seedling transfer ended early (planned: {planned_t}d)"
+                        )
+                        if early_transfer:
+                            actual_transfer = st.number_input(
+                                "ימי העברה בפועל" if lang_key=="he" else "Actual transfer days",
+                                min_value=1, max_value=planned_t, value=1, step=1, key='actual_transfer_input'
+                            )
+                        else:
+                            actual_transfer = None
+
+                    # סיכום חיסכון
+                    total_saved = 0
+                    if early_flowering and actual_end_date and pd.notna(planned_end):
+                        saved_fl = (planned_end.date() - actual_end_date).days
+                        if saved_fl > 0:
+                            st.info(f"🌿 חיסכון בהפרחה: **{saved_fl} ימים** מוקדם יותר" if lang_key=="he" else f"🌿 Flowering: **{saved_fl} days** earlier")
+                            total_saved += saved_fl
+                    if early_harvest and actual_harvest:
+                        total_saved += planned_h - actual_harvest
+                    if early_cleaning and actual_cleaning:
+                        total_saved += planned_c - actual_cleaning
+                    if early_transfer and actual_transfer:
+                        total_saved += planned_t - actual_transfer
+                    if total_saved > 0:
+                        st.success(f"⚡ סה״כ חיסכון: **{total_saved} ימים** — החממה תתפנה מוקדם יותר!" if lang_key=="he" else f"⚡ Total saved: **{total_saved} days** — greenhouse available sooner!")
+
+                    if st.button("💾 שמור סיום מוקדם" if lang_key=="he" else "💾 Save Early Completion", type="primary"):
+                        if supabase:
+                            try:
+                                update_rec = {}
+                                if early_flowering and actual_end_date:
+                                    update_rec['actual_end_date'] = str(actual_end_date)
+                                if early_harvest and actual_harvest:
+                                    update_rec['actual_harvest_days'] = int(actual_harvest)
+                                if early_cleaning and actual_cleaning:
+                                    update_rec['actual_cleaning_days'] = int(actual_cleaning)
+                                if early_transfer and actual_transfer:
+                                    update_rec['actual_transfer_days'] = int(actual_transfer)
+                                if update_rec:
+                                    supabase.table('batches').update(update_rec).eq('batch_id', selected_batch).execute()
+                                    st.success(f"✅ עודכן! {len(update_rec)} שדות נשמרו." if lang_key=="he" else f"✅ Saved! {len(update_rec)} fields updated.")
+                                    st.cache_data.clear()
+                                    st.rerun()
+                                else:
+                                    st.warning("לא נבחר אף שלב לעדכון" if lang_key=="he" else "No phase selected for update")
+                            except Exception as e:
+                                st.error(f"שגיאה: {e}")
 
 if page == "🏆 המלצת חממה":
     st.title("🏆 המלצת חממה חכמה")
@@ -1320,12 +1443,22 @@ elif page == "📅 גאנט":
             res = supabase_gantt.table('batches').select('*').order('start_date', desc=False).limit(500).execute()
             raw = pd.DataFrame(res.data)
             raw['start'] = pd.to_datetime(raw['start_date'], errors='coerce')
-            raw['end'] = pd.to_datetime(raw['end_date'].astype(str).str[:10], format='%Y-%m-%d', errors='coerce')
+            raw['planned_end'] = pd.to_datetime(raw['end_date'].astype(str).str[:10], format='%Y-%m-%d', errors='coerce')
+            # שימוש ב-actual_end_date אם קיים (סיום מוקדם)
+            if 'actual_end_date' in raw.columns:
+                raw['actual_end_dt'] = pd.to_datetime(raw['actual_end_date'], errors='coerce')
+                raw['end'] = raw['actual_end_dt'].combine_first(raw['planned_end'])
+                raw['ended_early'] = raw['actual_end_dt'].notna()
+            else:
+                raw['end'] = raw['planned_end']
+                raw['ended_early'] = False
             raw['זן'] = raw['strain']
             raw['חממה'] = raw['greenhouse']
             raw['מספר אצווה'] = raw['batch_id']
             raw['סה״כ ימים'] = raw['total_days']
             raw['סוג'] = raw['is_planned'].apply(lambda x: ('📋 Planned' if lang_key=='en' else '📋 מתוכנן') if x else ('✅ Historical' if lang_key=='en' else '✅ היסטורי'))
+            # סימון אצוות עם סיום מוקדם
+            raw.loc[raw['ended_early']==True, 'סוג'] = '⚡ סיים מוקדם' if lang_key=='he' else '⚡ Early finish'
             df_valid = raw.dropna(subset=['start','end']).copy()
             df_valid = df_valid[df_valid['start'] >= '2023-01-01']
             st.info(f"Total {len(df_valid)} batches in DB" if lang_key=="en" else f"סה״כ {len(df_valid)} אצוות במסד")
@@ -1410,9 +1543,10 @@ elif page == "📅 גאנט":
                 if 0 < gap_days <= 14:  # פער של עד שבועיים = תהליכי מעבר
                     # נחשב כמה ימים לכל שלב — לפי ברירת מחדל אם אין שדות
                     row_data = gh_sorted.iloc[i]
-                    h_d = int(row_data.get('harvest_days', 1)) if 'harvest_days' in row_data.index else 1
-                    c_d = int(row_data.get('cleaning_days', 1)) if 'cleaning_days' in row_data.index else max(1, gap_days - 2)
-                    t_d = int(row_data.get('transfer_days', 1)) if 'transfer_days' in row_data.index else 1
+                    # העדפה לערכים בפועל (actual) אם קיימים
+                    h_d = int(row_data.get('actual_harvest_days') or row_data.get('harvest_days', 1)) if any(k in row_data.index for k in ['actual_harvest_days','harvest_days']) else 1
+                    c_d = int(row_data.get('actual_cleaning_days') or row_data.get('cleaning_days', 1)) if any(k in row_data.index for k in ['actual_cleaning_days','cleaning_days']) else max(1, gap_days - 2)
+                    t_d = int(row_data.get('actual_transfer_days') or row_data.get('transfer_days', 1)) if any(k in row_data.index for k in ['actual_transfer_days','transfer_days']) else 1
                     total_defined = h_d + c_d + t_d
                     # אם הפערים מוגדרים בדיוק — נשתמש בהם, אחרת נחלק את הפער שווה
                     if total_defined == gap_days:
