@@ -810,12 +810,29 @@ if page == "📋 שיבוץ אצוות":
         with col3:
             new_date = st.date_input("Entry Date" if lang_key=="en" else "תאריך כניסה", datetime.today(), key='new_date')
 
-        # ימי ניקוי (ביון)
-        cleaning_days = st.select_slider(
-            "🧹 Cleaning days before entry (sanitation)" if lang_key=="en" else "🧹 ימי ניקוי (ביון) לפני כניסת אצווה",
-            options=[1, 2, 3],
-            value=1,
-            key='cleaning_days'
+        # ─── תהליכי מעבר בין אצוות ───────────────────────────────────────────────
+        st.markdown("##### ⏱️ " + ("Transition periods between batches" if lang_key=="en" else "תקופות מעבר בין אצוות"))
+        tc1, tc2, tc3 = st.columns(3)
+        with tc1:
+            st.markdown("🌾 " + ("Harvest" if lang_key=="en" else "קציר"), help="תמיד יום אחד" if lang_key=="he" else "Always 1 day")
+            st.info("1 " + ("day (fixed)" if lang_key=="en" else "יום (קבוע)"))
+            harvest_days = 1
+        with tc2:
+            cleaning_days = st.select_slider(
+                "🧹 " + ("Cleaning / Sanitation" if lang_key=="en" else "ניקוי / ביון"),
+                options=[1, 2, 3], value=1, key='cleaning_days'
+            )
+        with tc3:
+            transfer_days = st.select_slider(
+                "🌱 " + ("Seedling Transfer" if lang_key=="en" else "העברת שתילים"),
+                options=[1, 2, 3], value=1, key='transfer_days'
+            )
+
+        total_transition = harvest_days + cleaning_days + transfer_days
+        st.caption(
+            f"סה״כ מעבר: {harvest_days} קציר + {cleaning_days} ניקוי + {transfer_days} העברה = **{total_transition} ימים**"
+            if lang_key=="he" else
+            f"Total transition: {harvest_days} harvest + {cleaning_days} cleaning + {transfer_days} transfer = **{total_transition} days**"
         )
 
         # בדיקת זמינות
@@ -833,16 +850,28 @@ if page == "📋 שיבוץ אצוות":
                 (batches_db['end_date'] >= target_dt)
             ]
 
-            # בדיקת תקופת ניקוי — האצווה האחרונה שהסתיימה לפני תאריך הכניסה
+            # בדיקת תקופת מעבר מלאה — קציר + ניקוי + העברה
             gh_batches = batches_db[batches_db['greenhouse'] == new_gh].dropna(subset=['end_date'])
             past_batches = gh_batches[gh_batches['end_date'] < target_dt]
-            cleaning_blocked = False
+            transition_blocked = False
             earliest_allowed = None
+            last_end = None
             if len(past_batches) > 0:
                 last_end = past_batches['end_date'].max()
-                earliest_allowed = last_end + timedelta(days=cleaning_days)
+                harvest_end   = last_end + timedelta(days=harvest_days)
+                cleaning_end  = harvest_end + timedelta(days=cleaning_days)
+                earliest_allowed = cleaning_end + timedelta(days=transfer_days)
                 if target_dt < earliest_allowed:
-                    cleaning_blocked = True
+                    transition_blocked = True
+                    # זיהוי איזה שלב חסום
+                    if target_dt <= last_end:
+                        blocked_stage = "🌾 עדיין בקציר" if lang_key=="he" else "🌾 Still in harvest"
+                    elif target_dt <= harvest_end:
+                        blocked_stage = "🌾 יום קציר" if lang_key=="he" else "🌾 Harvest day"
+                    elif target_dt <= cleaning_end:
+                        blocked_stage = "🧹 ניקוי / ביון" if lang_key=="he" else "🧹 Cleaning / Sanitation"
+                    else:
+                        blocked_stage = "🌱 העברת שתילים" if lang_key=="he" else "🌱 Seedling Transfer"
 
             if len(active) > 0:
                 cleaning_error = True
@@ -859,20 +888,25 @@ if page == "📋 שיבוץ אצוות":
                         hist = df[(df['חממה']==gh)&(df['זן']==new_strain)]
                         exp = f" | {len(hist)} אצוות עם הזן" if len(hist)>0 else " | אין ניסיון עם הזן"
                         st.success(f"✅ Greenhouse {gh} available{exp}" if lang_key=="en" else f"✅ חממה {gh} פנויה{exp}")
-            elif cleaning_blocked:
+            elif transition_blocked:
                 cleaning_error = True
                 st.error(
-                    f"🧹 חממה {new_gh} בתהליך ניקוי! "
-                    f"הקציר האחרון הסתיים ב-{last_end.strftime('%d/%m/%Y')}. "
-                    f"עם {cleaning_days} ימי ניקוי — המועד המוקדם ביותר לכניסה: "
-                    f"**{earliest_allowed.strftime('%d/%m/%Y')}**"
+                    f"⛔ חממה {new_gh} בתהליך: **{blocked_stage}**\n\n"
+                    f"סיום הפרחה הקודמת: {last_end.strftime('%d/%m/%Y')} | "
+                    f"המועד המוקדם ביותר לכניסה: **{earliest_allowed.strftime('%d/%m/%Y')}**\n\n"
+                    f"(קציר {harvest_days}י + ניקוי {cleaning_days}י + העברה {transfer_days}י)"
+                    if lang_key=="he" else
+                    f"⛔ Greenhouse {new_gh} in process: **{blocked_stage}**\n\n"
+                    f"Last batch ended: {last_end.strftime('%d/%m/%Y')} | "
+                    f"Earliest allowed entry: **{earliest_allowed.strftime('%d/%m/%Y')}**\n\n"
+                    f"(harvest {harvest_days}d + cleaning {cleaning_days}d + transfer {transfer_days}d)"
                 )
             else:
                 if earliest_allowed is not None:
                     st.success(
-                        f"✅ חממה {new_gh} פנויה בתאריך זה ✔ ניקוי של {cleaning_days} ימים הושלם"
+                        f"✅ חממה {new_gh} פנויה — כל {total_transition} ימי המעבר הושלמו ✔"
                         if lang_key=="he" else
-                        f"✅ Greenhouse {new_gh} available ✔ {cleaning_days}-day cleaning satisfied"
+                        f"✅ Greenhouse {new_gh} available — all {total_transition} transition days satisfied ✔"
                     )
                 else:
                     st.success(f"✅ Greenhouse {new_gh} available on this date!" if lang_key=="en" else f"✅ חממה {new_gh} פנויה בתאריך זה!")
@@ -953,10 +987,15 @@ if page == "📋 שיבוץ אצוות":
                         'total_days': predicted_days,
                         'season': get_season(new_date.month, lang_key),
                         'is_planned': True,
-                        'cleaning_days': int(cleaning_days)
+                        'harvest_days': int(harvest_days),
+                        'cleaning_days': int(cleaning_days),
+                        'transfer_days': int(transfer_days)
                     }
                     supabase.table('batches').upsert(record, on_conflict='batch_id').execute()
-                    st.success(f"✅ האצווה שובצה בהצלחה! חממה {new_gh} | {new_date} → {end_date_pred.strftime('%d/%m/%Y')} | ניקוי: {cleaning_days} ימים")
+                    st.success(
+                        f"✅ האצווה שובצה! חממה {new_gh} | {new_date} → {end_date_pred.strftime('%d/%m/%Y')} | "
+                        f"מעבר: 🌾{harvest_days} 🧹{cleaning_days} 🌱{transfer_days} ימים"
+                    )
                     st.cache_data.clear()
                     st.rerun()
                 except Exception as e:
@@ -1358,56 +1397,93 @@ elif page == "📅 גאנט":
         else:
             hover_cols = ['מספר אצווה', 'סוג']
 
-        # בלוקי ניקוי — מחשבים לכל חממה את תקופות הניקוי בין אצוות
-        cleaning_rows = []
+        # ─── בלוקי תהליכי מעבר בין אצוות ────────────────────────────────────────
+        # קציר (🌾 כתום), ניקוי (🧹 אפור), העברת שתילים (🌱 ירוק בהיר)
+        transition_rows = []
         for gh in filtered_gantt['חממה'].unique():
             gh_sorted = filtered_gantt[filtered_gantt['חממה'] == gh].sort_values('start')
             row_label = filtered_gantt[filtered_gantt['חממה'] == gh]['שורה'].iloc[0]
             for i in range(len(gh_sorted) - 1):
-                cur_end = gh_sorted.iloc[i]['end']
+                cur_end   = gh_sorted.iloc[i]['end']
                 next_start = gh_sorted.iloc[i+1]['start']
-                gap_days = (next_start - cur_end).days
-                if 0 < gap_days <= 7:  # פער של עד שבוע = תקופת ניקוי
-                    cleaning_rows.append({
-                        'start': cur_end,
-                        'end': next_start,
-                        'שורה': row_label,
-                        'זן': '🧹 ניקוי' if lang_key=='he' else '🧹 Cleaning',
-                        'מספר אצווה': f"ניקוי {gap_days} ימים" if lang_key=='he' else f"Cleaning {gap_days}d",
-                        'סוג': '🧹 ניקוי' if lang_key=='he' else '🧹 Cleaning',
-                        'חממה': gh
-                    })
+                gap_days  = (next_start - cur_end).days
+                if 0 < gap_days <= 14:  # פער של עד שבועיים = תהליכי מעבר
+                    # נחשב כמה ימים לכל שלב — לפי ברירת מחדל אם אין שדות
+                    row_data = gh_sorted.iloc[i]
+                    h_d = int(row_data.get('harvest_days', 1)) if 'harvest_days' in row_data.index else 1
+                    c_d = int(row_data.get('cleaning_days', 1)) if 'cleaning_days' in row_data.index else max(1, gap_days - 2)
+                    t_d = int(row_data.get('transfer_days', 1)) if 'transfer_days' in row_data.index else 1
+                    total_defined = h_d + c_d + t_d
+                    # אם הפערים מוגדרים בדיוק — נשתמש בהם, אחרת נחלק את הפער שווה
+                    if total_defined == gap_days:
+                        h_end = cur_end + timedelta(days=h_d)
+                        c_end = h_end + timedelta(days=c_d)
+                        t_end = c_end + timedelta(days=t_d)
+                    else:
+                        # חלוקה יחסית: קציר 1 יום, שאר מחצית-מחצית
+                        h_d = min(1, gap_days)
+                        remaining = gap_days - h_d
+                        c_d = max(1, remaining // 2)
+                        t_d = remaining - c_d
+                        h_end = cur_end + timedelta(days=h_d)
+                        c_end = h_end + timedelta(days=c_d)
+                        t_end = next_start
 
-        if cleaning_rows:
-            cleaning_df = pd.DataFrame(cleaning_rows)
-            # מחברים לטבלה הראשית להצגה בגאנט
-            all_gantt = pd.concat([filtered_gantt, cleaning_df], ignore_index=True)
+                    base = {'שורה': row_label, 'חממה': gh, 'סוג': '🔄 מעבר'}
+                    if h_d > 0:
+                        transition_rows.append({**base,
+                            'start': cur_end, 'end': h_end,
+                            'זן': '🌾 קציר' if lang_key=='he' else '🌾 Harvest',
+                            'מספר אצווה': f"🌾 קציר ({h_d}י)" if lang_key=='he' else f"🌾 Harvest ({h_d}d)"
+                        })
+                    if c_d > 0:
+                        transition_rows.append({**base,
+                            'start': h_end, 'end': c_end,
+                            'זן': '🧹 ניקוי' if lang_key=='he' else '🧹 Cleaning',
+                            'מספר אצווה': f"🧹 ניקוי ({c_d}י)" if lang_key=='he' else f"🧹 Cleaning ({c_d}d)"
+                        })
+                    if t_d > 0:
+                        transition_rows.append({**base,
+                            'start': c_end, 'end': t_end,
+                            'זן': '🌱 העברה' if lang_key=='he' else '🌱 Transfer',
+                            'מספר אצווה': f"🌱 העברת שתילים ({t_d}י)" if lang_key=='he' else f"🌱 Seedling Transfer ({t_d}d)"
+                        })
+
+        if transition_rows:
+            trans_df = pd.DataFrame(transition_rows)
+            all_gantt = pd.concat([filtered_gantt, trans_df], ignore_index=True)
         else:
             all_gantt = filtered_gantt
 
-        color_col = all_gantt['זן'].copy()
         fig = px.timeline(
             all_gantt,
             x_start='start',
             x_end='end',
             y='שורה',
-            color=color_col,
+            color='זן',
             title="Flowering Batches Gantt" if lang_key=="en" else "גאנט אצוות הפרחה",
             hover_data=['מספר אצווה', 'סוג'],
             color_discrete_map={
-                '🧹 ניקוי': '#e8e8e8',
-                '🧹 Cleaning': '#e8e8e8',
+                '🌾 קציר':   '#f5c842',
+                '🌾 Harvest': '#f5c842',
+                '🧹 ניקוי':   '#d0d0d0',
+                '🧹 Cleaning':'#d0d0d0',
+                '🌱 העברה':   '#b8f0c0',
+                '🌱 Transfer':'#b8f0c0',
             },
             color_discrete_sequence=['#a8c8e8','#b8ddb8','#f5c8a0','#d4a8b8','#c8c8e8','#f5e0a0','#a8d4d0','#e8c0b8','#c0d4a8','#d4c0e0']
         )
-        # הוספת קווי הפרדה (קו ניקוי) לבלוקים בצבע שונה
         today_str = datetime.today().strftime('%Y-%m-%d')
         fig.add_vline(x=today_str, line_dash="dash", line_color="#2d6a4f", line_width=1.5)
         fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(255,255,255,0.9)', font=dict(color='#1a3a1e'), title_x=0.0 if lang_key=='en' else 1.0, title_xanchor='left' if lang_key=='en' else 'right', margin=dict(l=10,r=10,t=40,b=10))
         fig.update_yaxes(categoryorder='category ascending')
         fig.update_layout(height=550, xaxis_title='Date' if lang_key=='en' else 'תאריך', yaxis_title='Greenhouse' if lang_key=='en' else 'חממה', legend_title_text='Strain' if lang_key=='en' else 'זן')
-        if cleaning_rows:
-            st.caption("🧹 בלוקים אפורים = תקופות ניקוי (ביון) בין אצוות" if lang_key=="he" else "🧹 Grey blocks = cleaning/sanitation periods between batches")
+        if transition_rows:
+            st.caption(
+                "🌾 כתום = קציר (1י) | 🧹 אפור = ניקוי | 🌱 ירוק = העברת שתילים"
+                if lang_key=="he" else
+                "🌾 Yellow = Harvest (1d) | 🧹 Grey = Cleaning | 🌱 Green = Seedling Transfer"
+            )
         st.plotly_chart(fig, use_container_width=True)
 
         st.markdown("---")
