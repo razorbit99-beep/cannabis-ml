@@ -458,6 +458,13 @@ def predict_ml(model, feature_cols, mapping, df, greenhouse, strain, start_date)
         'חודש_התחלה': start_date.month,
         **sensor_means
     }
+    # אם המודל אומן עם THCA כפיצ'ר — ממלאים עם ממוצע הזן או הממוצע הכללי
+    if 'THCA' in feature_cols:
+        if 'THCA' in df.columns:
+            strain_thca = df[df['זן'] == strain]['THCA'].dropna()
+            row['THCA'] = float(strain_thca.mean()) if not strain_thca.empty else float(df['THCA'].dropna().mean())
+        else:
+            row['THCA'] = 21.0  # ממוצע כללי מתוצאות המעבדה
     X = pd.DataFrame([row])[feature_cols]
     return round(float(model.predict(X)[0]), 1), season
 
