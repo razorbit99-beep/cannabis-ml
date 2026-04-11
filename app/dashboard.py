@@ -1647,9 +1647,7 @@ elif page == "📅 גאנט":
 
         # ─── עיצוב כללי ──────────────────────────────────────────────────────────
         today_str = datetime.today().strftime('%Y-%m-%d')
-        fig.add_vline(x=today_str, line_dash="dot", line_color="#e05c2d", line_width=2,
-                      annotation_text="היום" if lang_key=="he" else "Today",
-                      annotation_position="top", annotation_font_color="#e05c2d", annotation_font_size=11)
+        fig.add_vline(x=today_str, line_dash="dot", line_color="#e05c2d", line_width=2)
         fig.update_layout(
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='#fafffe',
