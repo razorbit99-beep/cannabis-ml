@@ -656,16 +656,27 @@ if lang_key == "en":
     </style>""", unsafe_allow_html=True)
 else:
     st.markdown("""<style>
-    /* RTL layout — sidebar moves to the right */
+    /* ── RTL layout: sidebar on right ── */
     .stApp { flex-direction: row-reverse !important; }
     [data-testid="stSidebar"] { order: 2 !important; }
     [data-testid="stMain"]    { order: 1 !important; }
+
+    /* ── Main content area RTL ── */
     [data-testid="stMainBlockContainer"],
     .main .block-container { direction: rtl !important; }
+
+    /* ── Headings ── */
     [data-testid="stHeadingWithActionElements"] { text-align: right !important; direction: rtl !important; }
     [data-testid="stHeadingWithActionElements"] > div { justify-content: flex-end !important; }
+    h1, h2, h3, h4, h5, h6 { direction: rtl !important; text-align: right !important; }
+
+    /* ── Metric widgets ── */
     .stMetric { direction: rtl !important; }
     .stMetric label { text-align: right !important; }
+    [data-testid="stMetricValue"] { text-align: right !important; }
+    [data-testid="stMetricLabel"] { text-align: right !important; }
+
+    /* ── Form widgets ── */
     label[data-testid="stWidgetLabel"] { text-align: right !important; direction: rtl !important; }
     .stRadio { direction: rtl !important; text-align: right !important; }
     .stRadio label { text-align: right !important; }
@@ -674,12 +685,38 @@ else:
     .stDateInput label { direction: rtl !important; text-align: right !important; }
     .stMultiSelect label { direction: rtl !important; text-align: right !important; }
     .stCheckbox label { direction: rtl !important; text-align: right !important; }
-    p, li { direction: rtl !important; text-align: right !important; }
+    .stSlider label { direction: rtl !important; text-align: right !important; }
+    .stSelectSlider label { direction: rtl !important; text-align: right !important; }
+
+    /* ── Paragraphs, lists, captions ── */
+    p, li, caption, figcaption { direction: rtl !important; text-align: right !important; }
+    [data-testid="stMarkdownContainer"] p,
+    [data-testid="stMarkdownContainer"] li,
+    [data-testid="stMarkdownContainer"] div { direction: rtl !important; text-align: right !important; }
+
+    /* ── Inputs / base-web ── */
     input { direction: rtl !important; text-align: right !important; }
     [data-baseweb="select"] { direction: rtl !important; }
     [data-baseweb="input"] { direction: rtl !important; text-align: right !important; }
+
+    /* ── Sidebar ── */
     [data-testid="stSidebar"] { direction: rtl !important; }
     [data-testid="stSidebar"] * { text-align: right !important; }
+
+    /* ── Dataframe / table ── */
+    [data-testid="stDataFrame"] { direction: rtl !important; }
+    table { direction: rtl !important; }
+    th, td { text-align: right !important; }
+
+    /* ── Tabs ── */
+    [data-testid="stTabs"] button { direction: rtl !important; }
+
+    /* ── Alerts / info boxes ── */
+    [data-testid="stAlert"] { direction: rtl !important; text-align: right !important; }
+    [data-testid="stAlert"] p { direction: rtl !important; text-align: right !important; }
+
+    /* ── Columns: align content to right ── */
+    [data-testid="column"] { direction: rtl !important; }
     </style>""", unsafe_allow_html=True)
 
 # ─── Top-of-page header ──────────────────────────────────────────────────────
@@ -825,7 +862,7 @@ if page == "📋 שיבוץ אצוות":
         with tc3:
             transfer_days = st.select_slider(
                 "🌱 " + ("Seedling Transfer" if lang_key=="en" else "העברת שתילים"),
-                options=[1, 2, 3], value=1, key='transfer_days'
+                options=[1, 2, 3], value=3, key='transfer_days'
             )
 
         total_transition = harvest_days + cleaning_days + transfer_days
@@ -1489,18 +1526,21 @@ elif page == "📅 גאנט":
     today = pd.Timestamp.today()
 
     # ─── פילטרים מקצועיים ────────────────────────────────────────────────────────
-    st.markdown("""<div style="background:#f7faf8;border-radius:10px;padding:12px 18px;margin-bottom:10px;border:1px solid #d4e8d8;">""", unsafe_allow_html=True)
+    st.markdown("""<div style="background:#f8fafc;border-radius:10px;padding:10px 16px 6px;
+                    margin-bottom:10px;border:1px solid #cbd5e1;">""", unsafe_allow_html=True)
     fc1, fc2, fc3 = st.columns([2, 2, 3])
     with fc1:
         all_gh = sorted(df_valid['חממה'].unique()) if len(df_valid)>0 else []
-        selected_gh_gantt = st.multiselect("🏠 " + ("Greenhouse" if lang_key=="en" else "חממה"), all_gh, default=all_gh, key='gantt_gh')
+        selected_gh_gantt = st.multiselect(
+            ("Greenhouse" if lang_key=="en" else "חממה"), all_gh, default=all_gh, key='gantt_gh')
     with fc2:
-        view_mode = st.radio("👁 " + ("View" if lang_key=="en" else "תצוגה"),
+        view_mode = st.radio(("View" if lang_key=="en" else "תצוגה"),
             ["Active + Future", "All", "Past Only"] if lang_key=="en" else ["פעיל + עתידי", "הכל", "עבר בלבד"],
             horizontal=True, index=0, key='gantt_view')
     with fc3:
         all_strains_g = sorted(df_valid['זן'].unique()) if len(df_valid)>0 else []
-        selected_strain = st.multiselect("🌿 " + ("Strain" if lang_key=="en" else "זן"), all_strains_g, default=[], key='gantt_strain')
+        selected_strain = st.multiselect(
+            ("Strain" if lang_key=="en" else "זן"), all_strains_g, default=[], key='gantt_strain')
     st.markdown("</div>", unsafe_allow_html=True)
 
     filtered_gantt = df_valid[df_valid['חממה'].isin(selected_gh_gantt)] if selected_gh_gantt else df_valid.copy()
@@ -1511,26 +1551,52 @@ elif page == "📅 גאנט":
     elif view_mode in ["עבר בלבד", "Past Only"]:
         filtered_gantt = filtered_gantt[filtered_gantt['end'] < today]
 
-    # ─── כרטיסי מדדים ────────────────────────────────────────────────────────────
+    # ─── פס מדדים מקצועי ─────────────────────────────────────────────────────────
     active_count  = len(filtered_gantt[(filtered_gantt['start'] <= today) & (filtered_gantt['end'] >= today)])
     future_count  = len(filtered_gantt[filtered_gantt['start'] > today])
     done_count    = len(filtered_gantt[filtered_gantt['end'] < today])
     total_count   = len(filtered_gantt)
     days_col_g    = [c for c in filtered_gantt.columns if 'ימים' in str(c) or ('days' in str(c).lower() and 'actual' not in str(c).lower())]
     avg_days_g    = round(filtered_gantt[days_col_g[0]].mean(), 1) if days_col_g else "—"
-    def _metric_card(icon, label, value, color="#2d6a4f"):
-        return f"""<div style="background:#fff;border-radius:10px;padding:14px 10px 10px;text-align:center;
-                    border-top:3px solid {color};box-shadow:0 2px 8px rgba(0,0,0,0.07);">
-            <div style="font-size:1.6em;">{icon}</div>
-            <div style="font-size:1.5em;font-weight:700;color:{color};">{value}</div>
-            <div style="font-size:0.78em;color:#666;margin-top:2px;">{label}</div></div>"""
-    mc1,mc2,mc3,mc4,mc5 = st.columns(5)
-    mc1.markdown(_metric_card("🌿","פעיל כרגע" if lang_key=="he" else "Active now", active_count,"#2d6a4f"), unsafe_allow_html=True)
-    mc2.markdown(_metric_card("🔮","עתידי" if lang_key=="he" else "Upcoming", future_count,"#5b8dee"), unsafe_allow_html=True)
-    mc3.markdown(_metric_card("✅","הסתיים" if lang_key=="he" else "Completed", done_count,"#888"), unsafe_allow_html=True)
-    mc4.markdown(_metric_card("📦","סה״כ" if lang_key=="he" else "Total", total_count,"#e07b39"), unsafe_allow_html=True)
-    mc5.markdown(_metric_card("⏱","ממוצע ימים" if lang_key=="he" else "Avg days", avg_days_g,"#9b59b6"), unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
+
+    _lbl_active  = "Active"    if lang_key=="en" else "פעיל כרגע"
+    _lbl_future  = "Upcoming"  if lang_key=="en" else "עתידי"
+    _lbl_done    = "Completed" if lang_key=="en" else "הסתיים"
+    _lbl_total   = "Total"     if lang_key=="en" else "סה\"כ"
+    _lbl_avg     = "Avg days"  if lang_key=="en" else "ממוצע ימים"
+    _dir         = "ltr"       if lang_key=="en" else "rtl"
+
+    st.markdown(f"""
+    <div style="display:flex;gap:0;background:#fff;border-radius:12px;overflow:hidden;
+                border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin:10px 0 16px;
+                direction:{_dir};">
+      <div style="flex:1;padding:14px 22px;border-right:1px solid #e2e8f0;text-align:center;">
+        <div style="font-size:0.72em;text-transform:uppercase;color:#64748b;letter-spacing:0.06em;font-weight:600;">{_lbl_active}</div>
+        <div style="font-size:2em;font-weight:800;color:#15803d;line-height:1.15;">{active_count}</div>
+        <div style="width:32px;height:3px;background:#15803d;border-radius:2px;margin:4px auto 0;"></div>
+      </div>
+      <div style="flex:1;padding:14px 22px;border-right:1px solid #e2e8f0;text-align:center;">
+        <div style="font-size:0.72em;text-transform:uppercase;color:#64748b;letter-spacing:0.06em;font-weight:600;">{_lbl_future}</div>
+        <div style="font-size:2em;font-weight:800;color:#2563eb;line-height:1.15;">{future_count}</div>
+        <div style="width:32px;height:3px;background:#2563eb;border-radius:2px;margin:4px auto 0;"></div>
+      </div>
+      <div style="flex:1;padding:14px 22px;border-right:1px solid #e2e8f0;text-align:center;">
+        <div style="font-size:0.72em;text-transform:uppercase;color:#64748b;letter-spacing:0.06em;font-weight:600;">{_lbl_done}</div>
+        <div style="font-size:2em;font-weight:800;color:#64748b;line-height:1.15;">{done_count}</div>
+        <div style="width:32px;height:3px;background:#94a3b8;border-radius:2px;margin:4px auto 0;"></div>
+      </div>
+      <div style="flex:1;padding:14px 22px;border-right:1px solid #e2e8f0;text-align:center;">
+        <div style="font-size:0.72em;text-transform:uppercase;color:#64748b;letter-spacing:0.06em;font-weight:600;">{_lbl_total}</div>
+        <div style="font-size:2em;font-weight:800;color:#d97706;line-height:1.15;">{total_count}</div>
+        <div style="width:32px;height:3px;background:#d97706;border-radius:2px;margin:4px auto 0;"></div>
+      </div>
+      <div style="flex:1;padding:14px 22px;text-align:center;">
+        <div style="font-size:0.72em;text-transform:uppercase;color:#64748b;letter-spacing:0.06em;font-weight:600;">{_lbl_avg}</div>
+        <div style="font-size:2em;font-weight:800;color:#7c3aed;line-height:1.15;">{avg_days_g}</div>
+        <div style="width:32px;height:3px;background:#7c3aed;border-radius:2px;margin:4px auto 0;"></div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     if len(filtered_gantt) == 0:
         st.warning("אין אצוות להצגה בטווח זה")
@@ -1576,31 +1642,40 @@ elif page == "📅 גאנט":
         filtered_gantt['סיום מתוכנן'] = harv_planned
         filtered_gantt['נותר']        = days_rem
 
-        # ─── בלוקי מעבר — אחרי כל אצווה בשורה שלה ────────────────────────────────
-        # (קציר + ניקוי + העברה) מוצגים תמיד אחרי כל אצווה שמסתיימת
+        # ─── בלוקי מעבר — קציר אחרי כל אצווה, ניקוי+העברה רק אחרי הקציר האחרון בחממה ─
+        # last_end_per_gh: תאריך סיום מקסימלי לכל חממה
+        last_end_per_gh = filtered_gantt.groupby('חממה')['end'].max()
         transition_rows = []
         for _, row_g in filtered_gantt.iterrows():
             h_d = int(row_g.get('actual_harvest_days') or row_g.get('harvest_days') or 1)
             c_d = int(row_g.get('actual_cleaning_days') or row_g.get('cleaning_days') or 3)
-            t_d = int(row_g.get('actual_transfer_days') or row_g.get('transfer_days') or 1)
+            t_d = int(row_g.get('actual_transfer_days') or row_g.get('transfer_days') or 3)
             batch_end  = row_g['end']
             h_end = batch_end  + timedelta(days=h_d)
             c_end = h_end      + timedelta(days=c_d)
             t_end = c_end      + timedelta(days=t_d)
             row_lbl = row_g['שורה']
             gh      = row_g['חממה']
+            is_last_in_gh = (batch_end == last_end_per_gh.get(gh))
             base = {'שורה':row_lbl,'חממה':gh,'סוג':'🔄','THCA צפוי':'','קציר מוקדם':'','קציר מאוחר':'','סיום מתוכנן':'','נותר':'','מספר אצווה':''}
-            transition_rows += [
+            # קציר — אחרי כל אצווה
+            transition_rows.append(
                 {**base,'start':batch_end,'end':h_end,
                  'זן':'🌾 קציר' if lang_key=='he' else '🌾 Harvest',
-                 'מספר אצווה':f"קציר {h_d}י" if lang_key=='he' else f"Harvest {h_d}d"},
-                {**base,'start':h_end,'end':c_end,
-                 'זן':'🧹 ניקוי' if lang_key=='he' else '🧹 Cleaning',
-                 'מספר אצווה':f"ניקוי {c_d}י" if lang_key=='he' else f"Cleaning {c_d}d"},
-                {**base,'start':c_end,'end':t_end,
-                 'זן':'🌱 העברה' if lang_key=='he' else '🌱 Transfer',
-                 'מספר אצווה':f"העברה {t_d}י" if lang_key=='he' else f"Transfer {t_d}d"},
-            ]
+                 'מספר אצווה':f"קציר {h_d}י" if lang_key=='he' else f"Harvest {h_d}d"}
+            )
+            # ניקוי + העברה — רק אחרי האצווה האחרונה בחממה
+            if is_last_in_gh:
+                transition_rows.append(
+                    {**base,'start':h_end,'end':c_end,
+                     'זן':'🧹 ניקוי' if lang_key=='he' else '🧹 Cleaning',
+                     'מספר אצווה':f"ניקוי {c_d}י" if lang_key=='he' else f"Cleaning {c_d}d"}
+                )
+                transition_rows.append(
+                    {**base,'start':c_end,'end':t_end,
+                     'זן':'🌱 העברה' if lang_key=='he' else '🌱 Transfer',
+                     'מספר אצווה':f"העברה {t_d}י" if lang_key=='he' else f"Transfer {t_d}d"}
+                )
 
         all_gantt = pd.concat(
             [filtered_gantt, pd.DataFrame(transition_rows)], ignore_index=True
@@ -1670,61 +1745,88 @@ elif page == "📅 גאנט":
                               layer='above', line_width=0, opacity=1)
             prev_gh = gh_of_row
 
-        # ─── קו "היום" ───────────────────────────────────────────────────────────
         today_str = datetime.today().strftime('%Y-%m-%d')
-        fig.add_vline(x=today_str, line_dash="dash", line_color="#dc2626", line_width=2)
 
         # ─── layout ──────────────────────────────────────────────────────────────
         n_rows = max(len(y_order), 1)
         fig.update_layout(
-            paper_bgcolor='white', plot_bgcolor='white',
-            font=dict(family="'Segoe UI',Arial,sans-serif", size=12, color='#1e293b'),
-            title=None,
-            margin=dict(l=10, r=20, t=30, b=15),
-            height=max(320, n_rows * 52 + 110),
+            paper_bgcolor='#ffffff', plot_bgcolor='#ffffff',
+            font=dict(family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+                      size=12, color='#1e293b'),
+            title=dict(text=''),
+            margin=dict(l=160, r=160, t=48, b=20),
+            height=max(340, n_rows * 56 + 120),
             xaxis=dict(
-                side='top', title=None,
-                showgrid=True, gridcolor='#e2e8f0', gridwidth=1,
-                tickfont=dict(size=11, color='#64748b'),
-                tickformat='%b %d', zeroline=False,
-                showline=True, linecolor='#334155', linewidth=2,
+                side='top', title=dict(text=''),
+                showgrid=True, gridcolor='#e9eef3', gridwidth=1,
+                tickfont=dict(size=11, color='#475569', family="'Segoe UI',Arial,sans-serif"),
+                tickformat='%d %b', zeroline=False,
+                showline=True, linecolor='#94a3b8', linewidth=1,
             ),
             yaxis=dict(
-                title=None,
+                title=dict(text=''),
                 categoryorder='array', categoryarray=list(reversed(y_order)),
-                tickfont=dict(size=11, color='#1e293b'),
+                tickfont=dict(size=11.5, color='#1e293b',
+                              family="'Segoe UI',Arial,sans-serif"),
                 showgrid=False, showline=True,
-                linecolor='#334155', linewidth=1,
+                linecolor='#cbd5e1', linewidth=1,
                 ticklabelposition='outside',
             ),
             legend=dict(
-                title=dict(text="  " + ("Strain" if lang_key=="en" else "זן"), font=dict(size=11)),
-                bgcolor='rgba(255,255,255,0.96)', bordercolor='#cbd5e1', borderwidth=1,
-                font=dict(size=10), orientation='v', x=1.01, y=1, xanchor='left',
+                title=dict(
+                    text=("Strain / Phase" if lang_key=="en" else "זן / שלב"),
+                    font=dict(size=11, color='#475569')),
+                bgcolor='rgba(255,255,255,0.97)',
+                bordercolor='#e2e8f0', borderwidth=1,
+                font=dict(size=10.5), orientation='v',
+                x=1.01, y=1, xanchor='left',
+                tracegroupgap=4,
             ),
             hoverlabel=dict(
                 bgcolor='#0f172a', font_color='#f1f5f9',
-                font_size=12, bordercolor='#22c55e', namelength=0
+                font_size=12.5, bordercolor='#22d3ee', namelength=0,
+                font_family="'Segoe UI',Arial,sans-serif",
             ),
-            bargap=0.25,
+            bargap=0.22,
         )
+
+        # ─── קו "היום" + תווית ───────────────────────────────────────────────────
+        fig.add_vline(x=today_str, line_dash="dot", line_color="#dc2626", line_width=2)
+        try:
+            fig.add_annotation(
+                x=today_str, y=1.0, xref='x', yref='paper',
+                text=("◀ Today" if lang_key=="en" else "היום ▶"),
+                showarrow=False, yanchor='bottom',
+                font=dict(size=10, color='#dc2626'),
+                bgcolor='rgba(255,255,255,0.9)',
+                bordercolor='#dc2626', borderwidth=1,
+                borderpad=3,
+            )
+        except Exception:
+            pass
 
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
         # ─── מקרא ────────────────────────────────────────────────────────────────
+        _legend_dir = "ltr" if lang_key=="en" else "rtl"
         st.markdown(
-            """<div style="display:flex;gap:20px;align-items:center;padding:7px 14px;
+            f"""<div style="display:flex;gap:22px;align-items:center;padding:8px 16px;
                 background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;
-                font-size:0.8em;color:#475569;flex-wrap:wrap;">
-              <b>""" + ("Legend:" if lang_key=="en" else "מקרא:") + """</b>
-              <span><span style="display:inline-block;width:13px;height:13px;background:#ca8a04;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>"""
+                font-size:0.8em;color:#475569;flex-wrap:wrap;
+                margin-top:6px;direction:{_legend_dir};">
+              <span style="font-weight:700;color:#334155;font-size:0.9em;">"""
+              + ("Legend:" if lang_key=="en" else "מקרא:") + """</span>
+              <span style="display:flex;align-items:center;gap:5px;">
+                <span style="display:inline-block;width:14px;height:10px;background:#ca8a04;border-radius:2px;"></span>"""
               + ("Harvest" if lang_key=="en" else "קציר") + """</span>
-              <span><span style="display:inline-block;width:13px;height:13px;background:#64748b;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>"""
+              <span style="display:flex;align-items:center;gap:5px;">
+                <span style="display:inline-block;width:14px;height:10px;background:#64748b;border-radius:2px;"></span>"""
               + ("Cleaning" if lang_key=="en" else "ניקוי") + """</span>
-              <span><span style="display:inline-block;width:13px;height:13px;background:#16a34a;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>"""
+              <span style="display:flex;align-items:center;gap:5px;">
+                <span style="display:inline-block;width:14px;height:10px;background:#16a34a;border-radius:2px;"></span>"""
               + ("Transfer" if lang_key=="en" else "העברת שתילים") + """</span>
-              <span style="border-left:1px solid #cbd5e1;padding-left:12px;">
-                <span style="display:inline-block;width:2px;height:13px;background:#dc2626;margin-right:4px;vertical-align:middle;"></span>"""
+              <span style="display:flex;align-items:center;gap:5px;border-left:1px solid #cbd5e1;padding-left:16px;">
+                <span style="display:inline-block;width:2px;height:14px;background:#dc2626;border-radius:1px;"></span>"""
               + ("Today" if lang_key=="en" else "היום") + """</span>
             </div>""", unsafe_allow_html=True
         )
@@ -1734,9 +1836,10 @@ elif page == "📅 גאנט":
         if len(active_now) > 0:
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown(
-                "<div style='background:linear-gradient(90deg,#1e3a5f,#0f4c2a);border-radius:8px;"
-                "padding:8px 18px;color:#fff;font-weight:600;font-size:1em;margin-bottom:8px;'>"
-                + ("🌿 Active Batches — Predicted Data" if lang_key=="en" else "🌿 אצוות פעילות כרגע — נתוני חיזוי") +
+                "<div style='background:#0f172a;border-radius:8px 8px 0 0;"
+                "padding:10px 20px;color:#e2e8f0;font-weight:600;font-size:0.95em;"
+                "letter-spacing:0.02em;border-bottom:2px solid #22c55e;'>"
+                + ("Active Batches — Predicted Data" if lang_key=="en" else "אצוות פעילות — נתוני חיזוי") +
                 "</div>", unsafe_allow_html=True
             )
             show_cols = [c for c in ['מספר אצווה','חממה','זן','start','end',
