@@ -102,12 +102,21 @@ div.block-container {
     padding: 10px 14px !important;
     font-size: 15px !important;
     background: #f8fcfa !important;
+    color: #1e293b !important;
+    -webkit-text-fill-color: #1e293b !important;
     transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+[data-testid="stForm"] .stTextInput > div > div > input::placeholder {
+    color: #94a3b8 !important;
+    -webkit-text-fill-color: #94a3b8 !important;
+    opacity: 1 !important;
 }
 [data-testid="stForm"] .stTextInput > div > div > input:focus {
     border-color: #2d6a4f !important;
     box-shadow: 0 0 0 3px rgba(45,106,79,0.14) !important;
     background: #fff !important;
+    color: #1e293b !important;
+    -webkit-text-fill-color: #1e293b !important;
 }
 [data-testid="stForm"] [data-testid="stFormSubmitButton"] > button {
     background: linear-gradient(135deg, #2d6a4f 0%, #1a3a1e 100%) !important;
